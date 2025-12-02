@@ -6,7 +6,9 @@ from pathlib import Path
 import uuid
 import shutil
 import requests
-import os
+
+# Hardcoded BASE_URL
+BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
 
 from database import get_db
 from models import Client, ClientFacialRecognitionURL, ClientFacialRecognitionSite, User
@@ -235,8 +237,7 @@ def create_facial_recognition_sites(
         with path.open("wb") as f:
             shutil.copyfileobj(image.file, f)
 
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        url = f"{base_url}/uploads/client_images/{filename}"
+        url = f"{BASE_URL}/uploads/client_images/{filename}"
 
         record = ClientFacialRecognitionSite(
             client_id=client_id,
