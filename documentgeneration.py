@@ -25,23 +25,29 @@ def generate_document(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Check for at least one client-provided email
+    # Check for at least one client-provided email (status = "Client Provided")
     client_provided_email = db.query(ClientEmail).filter(
         ClientEmail.client_id == client_id,
         ClientEmail.status == "Client Provided"
     ).first()
     
-    # Check for at least one client-provided phone number
+    # Check for at least one client-provided phone number (client_provided = "Yes")
     client_provided_phone = db.query(ClientPhoneNumber).filter(
         ClientPhoneNumber.client_id == client_id,
         ClientPhoneNumber.client_provided == "Yes"
     ).first()
     
-    # Check for at least one client-provided address
+    # Check for at least one client-provided address (client_provided = "Yes")
     client_provided_address = db.query(ClientAddress).filter(
         ClientAddress.client_id == client_id,
         ClientAddress.client_provided == "Yes"
     ).first()
+    
+    # Debug logging
+    print(f"Client {client_id} validation:")
+    print(f"- Client provided email: {bool(client_provided_email)}")
+    print(f"- Client provided phone: {bool(client_provided_phone)}")
+    print(f"- Client provided address: {bool(client_provided_address)}")
     
     # Validate that at least one client-provided data exists
     if not (client_provided_email or client_provided_phone or client_provided_address):
