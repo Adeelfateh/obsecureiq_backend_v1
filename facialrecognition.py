@@ -299,7 +299,7 @@ def update_facial_recognition_site(
         print(f"Warning: {e}")
 
     record.site_name = site_name.strip()
-    record.image_url = f"/uploads/client_images/{filename}"
+    record.image_url = f"{BASE_URL}/uploads/client_images/{filename}"
     record.updated_at = datetime.now(timezone.utc)
 
     db.commit()
