@@ -2,6 +2,42 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Environment variables as constants
+SECRET_KEY = os.getenv("SECRET_KEY", "my-super-secret-jwt-key-2024-auth-system")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
+# Debug logging for Railway deployment
+print(f"SECRET_KEY loaded: {SECRET_KEY[:10]}...")
+print(f"ALGORITHM: {ALGORITHM}")
+print(f"DB_HOST: {os.getenv('DB_HOST', 'Not set')}")
+
+# Database Configuration
+DB_HOST = os.getenv("DB_HOST", "aws-1-us-west-1.pooler.supabase.com")
+DB_PORT = int(os.getenv("DB_PORT", "6543"))
+DB_NAME = os.getenv("DB_NAME", "postgres")
+DB_USER = os.getenv("DB_USER", "postgres.tgqpsbfwkzdgmynrdvnc")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "admin123")
+DB_SSLMODE = os.getenv("DB_SSLMODE", "require")
+
+# SMTP Configuration
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_EMAIL = os.getenv("SMTP_EMAIL", "adeelfateh33@gmail.com")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "ptnr vhac mlsl qrru")
+
+# URLs
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
+# Default password for admin-created users
+DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "Test@123")
 
 # Import database setup
 from database import create_tables
@@ -43,23 +79,27 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS middleware
-origins = [
-    "http://localhost:8080",  # local dev
-    "https://obsecureiq-frontend-v1.vercel.app"  # production frontend
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins during development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # Create database tables
-create_tables()
+try:
+    create_tables()
+    print("Database tables created successfully")
+except Exception as e:
+    print(f"Database error: {e}")
 
 # Create default admin user
-create_default_admin()
+try:
+    create_default_admin()
+    print("Default admin user setup completed")
+except Exception as e:
+    print(f"Admin user creation error: {e}")
 
 # Register all routers with proper tags
 app.include_router(users_router, tags=["Authentication & User Management"])
