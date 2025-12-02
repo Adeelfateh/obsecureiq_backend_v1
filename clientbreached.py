@@ -13,7 +13,7 @@ from schemas import BreachedRecordResponse
 from users import get_current_user
 
 router = APIRouter()
-BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
+BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
 
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
