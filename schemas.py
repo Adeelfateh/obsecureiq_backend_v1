@@ -54,8 +54,8 @@ class ClientResponse(BaseModel):
     id: uuid.UUID = Field(..., alias="ID")
     full_name: str | None = None
     other_names: str | None = None
-    date_of_birth: datetime | None = None
-    profile_photo: str | None = None
+    date_of_birth: date | None = None
+    profile_photo_url: str | None = None
     sex: str | None = None
     organization: str | None = None
     status: str | None = None
@@ -75,6 +75,16 @@ class ClientResponse(BaseModel):
 
 class AssignClientRequest(BaseModel):
     analyst_email: EmailStr
+
+class ClientCreate(BaseModel):
+    full_name: str
+    other_names: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    sex: Optional[str] = None
+    organization: Optional[str] = None
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    employer: Optional[str] = None
 
 # Email Schemas
 class EmailCreate(BaseModel):
