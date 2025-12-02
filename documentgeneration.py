@@ -62,7 +62,7 @@ def generate_document(
         missing_items = ", ".join(missing_data)
         raise HTTPException(
             status_code=400, 
-            detail=f"Please add the following required client-provided data: {missing_items}"
+            detail=f"Please add at least one client provided phone number,email and address"
         )
 
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/c6cd3dab-bf74-4e93-98b3-6a1da378b730"
