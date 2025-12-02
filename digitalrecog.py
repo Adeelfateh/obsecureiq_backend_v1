@@ -6,7 +6,9 @@ from pathlib import Path
 import uuid
 import shutil
 import json
-import os
+
+# Hardcoded BASE_URL
+BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
 
 from database import get_db
 from models import (
@@ -75,8 +77,7 @@ def create_front_house_record(
                 shutil.copyfileobj(image.file, f)
             
             # Create complete image URL for database
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url = f"{BASE_URL}/uploads/client_images/{filename}"
             image_urls.append(image_url)
     
     record = ClientFrontHouseRecord(
@@ -132,8 +133,7 @@ def upload_front_house_images(
             shutil.copyfileobj(image.file, f)
         
         # Create complete image URL for database
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        image_url = f"{base_url}/uploads/client_images/{filename}"
+        image_url = f"{BASE_URL}/uploads/client_images/{filename}"
         uploaded_urls.append(image_url)
     
     # Update record with new image URLs
@@ -224,8 +224,7 @@ def update_front_house_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
             new_image_urls.append(image_url)
             print(f"Uploaded new image: {filename}")
     
@@ -329,8 +328,7 @@ def create_back_house_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
             image_urls.append(image_url)
     
     record = ClientBackHouseRecord(
@@ -386,8 +384,7 @@ def upload_back_house_images(
         with filepath.open("wb") as f:
             shutil.copyfileobj(image.file, f)
         
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        image_url = f"{base_url}/uploads/client_images/{filename}"
+        image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
         uploaded_urls.append(image_url)
     
     # Update record with new image URLs
@@ -478,8 +475,7 @@ def update_back_house_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
             new_image_urls.append(image_url)
             print(f"Uploaded new image: {filename}")
     
@@ -571,8 +567,7 @@ def create_inside_house_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url = f"{BASE_URL}/uploads/client_images/{filename}"
             image_urls.append(image_url)
     
     record = ClientInsideHouseRecord(
@@ -619,8 +614,7 @@ def upload_inside_house_images(
         with filepath.open("wb") as f:
             shutil.copyfileobj(image.file, f)
         
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        image_url = f"{base_url}/uploads/client_images/{filename}"
+        image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
         uploaded_urls.append(image_url)
     
     # Update record with new image URLs
@@ -701,8 +695,7 @@ def update_inside_house_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
             new_image_urls.append(image_url)
     
     # Update fields
@@ -786,8 +779,7 @@ def create_google_street_view_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
             image_urls.append(image_url)
     
     record = ClientGoogleStreetViewRecord(
@@ -842,8 +834,7 @@ def upload_google_street_view_images(
         with filepath.open("wb") as f:
             shutil.copyfileobj(image.file, f)
         
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        image_url = f"{base_url}/uploads/client_images/{filename}"
+        image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
         uploaded_urls.append(image_url)
     
     # Update record with new image URLs
@@ -928,8 +919,7 @@ def update_google_street_view_record(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            base_url = os.getenv("BASE_URL", "http://localhost:8000")
-            image_url = f"{base_url}/uploads/client_images/{filename}"
+            image_url =  f"{BASE_URL}/uploads/client_images/{filename}"
             new_image_urls.append(image_url)
     
     # Update fields
