@@ -66,7 +66,26 @@ def unassign_client(
     db.commit()
 
     return {"message": "Client unassigned successfully"}
-    
+
+@router.delete("/clients/{client_id}", status_code=status.HTTP_200_OK)
+def delete_client(
+    client_id: uuid.UUID, 
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete client completely (Admin only)"""
+    # Check if client exists
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Delete the client
+    db.delete(client)
+    db.commit()
+
+    return {"message": "Client deleted successfully"}
+
+
 @router.get("/analyst/clients", response_model=Annotated[List[ClientResponse], None])
 def get_clients_for_analyst(
     analyst_user: User = Depends(get_analyst_user), 
