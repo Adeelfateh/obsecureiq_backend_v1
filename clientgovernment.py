@@ -19,6 +19,7 @@ from schemas import (
     GovRecordCreate, GovRecordUpdate, GovRecordResponse
 )
 from users import get_current_user
+BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
 
 router = APIRouter()
 
@@ -122,8 +123,7 @@ def upload_donor_csv(
         )
     
     # Create complete CSV file URL
-    base_url = os.getenv("BASE_URL", "http://localhost:8000")
-    csv_file_url = f"{base_url}/uploads/client_images/{unique_filename}"
+    csv_file_url = f"{BASE_URL}/uploads/client_images/{unique_filename}"
     
     # Create a record with just the CSV file
     new_record = ClientDonorRecord(
