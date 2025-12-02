@@ -4,40 +4,42 @@ from sqlalchemy.orm import sessionmaker
 from urllib.parse import quote_plus
 from models import Base
 
-# Load .env only locally (Railway ignores .env)
+# Load environment variables (only if .env file exists)
 from dotenv import load_dotenv
-load_dotenv()
+if os.path.exists('.env'):
+    load_dotenv()
+    print("📁 Loaded .env file")
+else:
+    print("🌐 Using Railway environment variables")
 
-# Fetch environment variables safely
-DB_HOST = os.getenv("DB_HOST") or None
-DB_PORT = os.getenv("DB_PORT") or None
-DB_NAME = os.getenv("DB_NAME") or None
-DB_USER = os.getenv("DB_USER") or None
-DB_PASSWORD = os.getenv("DB_PASSWORD") or None
-DB_SSLMODE = os.getenv("DB_SSLMODE") or "require"
+# Database configuration
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_SSLMODE = os.getenv("DB_SSLMODE", "require")
 
-# Check for missing required variables (prevents silent failures)
-required_vars = {
-    "DB_HOST": DB_HOST,
-    "DB_PORT": DB_PORT,
-    "DB_NAME": DB_NAME,
-    "DB_USER": DB_USER,
-    "DB_PASSWORD": DB_PASSWORD,
-}
+# Debug: Print available environment variables (without sensitive data)
+print(f"Debug - DB_HOST: {DB_HOST}")
+print(f"Debug - DB_PORT: {DB_PORT}")
+print(f"Debug - DB_NAME: {DB_NAME}")
+print(f"Debug - DB_USER: {DB_USER}")
+print(f"Debug - DB_PASSWORD: {'***' if DB_PASSWORD else None}")
 
-missing = [key for key, value in required_vars.items() if not value]
+# Validate required environment variables
+required_vars = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"]
+missing = [var for var in required_vars if not os.getenv(var)]
+
 if missing:
-    raise ValueError(f"❌ Missing required environment variables: {missing}")
+    print(f"❌ Missing required environment variables: {missing}")
+    print("Please check your Railway environment variables configuration.")
+    raise ValueError(f"Missing required environment variables: {missing}")
+# URL encode password to handle special characters
+encoded_password = quote_plus(DB_PASSWORD)
 
-# Encode username and password safely
-DB_USER_SAFE = quote_plus(str(DB_USER))
-DB_PASSWORD_SAFE = quote_plus(str(DB_PASSWORD))
-
-# Build connection URL
-DATABASE_URL = (
-    f"postgresql://{DB_USER_SAFE}:{DB_PASSWORD_SAFE}@{DB_HOST}:{DB_PORT}/"
-    f"{DB_NAME}?sslmode={DB_SSLMODE}"
-)
+# Build connection string
+DATABASE_URL = f"postgresql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode={DB_SSLMODE}"
 
 # Create engine
 engine = create_engine(
@@ -51,12 +53,16 @@ engine = create_engine(
 # Create session factory
 SessionLocal = sessionmaker(bind=engine)
 
-# Initialize tables
+print(f"✅ Database connection configured for: {DB_HOST}:{DB_PORT}/{DB_NAME}")
+
+
+
+# Create all tables
 def create_tables():
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created successfully")
+    print("Database tables created successfully")
 
-# DB Session Dependency
+# Dependency to get database session
 def get_db():
     db = SessionLocal()
     try:
