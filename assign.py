@@ -45,6 +45,28 @@ def assign_client_to_analyst(
 
     return {"message": f"Client assigned to analyst {analyst.full_name}"}
 
+@router.put("/clients/{client_id}/unassign", status_code=status.HTTP_200_OK)
+def unassign_client(
+    client_id: uuid.UUID, 
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Unassign client from analyst (Admin only)"""
+    # Check if client exists
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    if not client.analyst_id:
+        raise HTTPException(status_code=400, detail="Client is not assigned to any analyst")
+
+    # Unassign client
+    client.analyst_id = None
+    client.assigned_at = None
+    db.commit()
+
+    return {"message": "Client unassigned successfully"}
+    
 @router.get("/analyst/clients", response_model=Annotated[List[ClientResponse], None])
 def get_clients_for_analyst(
     analyst_user: User = Depends(get_analyst_user), 
