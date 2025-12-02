@@ -8,7 +8,7 @@ import shutil
 import json
 
 # Hardcoded BASE_URL
-BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
+BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
 
 from database import get_db
 from models import (
