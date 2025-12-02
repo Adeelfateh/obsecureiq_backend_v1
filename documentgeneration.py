@@ -25,7 +25,7 @@ def generate_document(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    webhook_url = "https://obscureiq.app.n8n.cloud/webhook-test/c6cd3dab-bf74-4e93-98b3-6a1da378b730"
+    webhook_url = "https://obscureiq.app.n8n.cloud/webhook/c6cd3dab-bf74-4e93-98b3-6a1da378b730"
     
     payload = {
         "client_id": str(client_id)
