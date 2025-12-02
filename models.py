@@ -32,7 +32,7 @@ class Client(Base):
     full_name = Column(Text, nullable=True)
     other_names = Column(Text, nullable=True)
     date_of_birth = Column(Date, nullable=True)
-    profile_photo = Column(Text, nullable=True)
+    profile_photo_url = Column(Text, nullable=True)
     sex = Column(String, nullable=True)
     organization = Column(Text, nullable=True)
     status = Column(String, default="pending", nullable=True)
