@@ -13,6 +13,7 @@ from schemas import ResidentialHeatmapImageResponse
 from users import get_current_user
 
 router = APIRouter()
+BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
 
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
@@ -87,8 +88,7 @@ def upload_client_residential_heatmap_images(
             )
         
         # Create complete image URL for database
-        base_url = os.getenv("BASE_URL")
-        image_url = f"{base_url}/uploads/client_images/{unique_filename}"
+        image_url = f"{BASE_URL}/uploads/client_images/{unique_filename}"
         
         # Create database record for each image
         new_image = ClientResidentialHeatmapImage(
@@ -176,8 +176,7 @@ def update_client_residential_heatmap_image(
             )
         
         # Update image URL in database with complete URL
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        new_image_url = f"{base_url}/uploads/client_images/{unique_filename}"
+        new_image_url = f"{BASE_URL}/uploads/client_images/{unique_filename}"
         image_record.image_url = new_image_url
         updated = True
         
