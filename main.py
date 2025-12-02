@@ -3,6 +3,32 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
+# Hardcoded environment variables
+SECRET_KEY = "my-super-secret-jwt-key-2024-auth-system"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Database Configuration
+DB_HOST = "aws-1-us-west-1.pooler.supabase.com"
+DB_PORT = 6543
+DB_NAME = "postgres"
+DB_USER = "postgres.tgqpsbfwkzdgmynrdvnc"
+DB_PASSWORD = "admin123"
+DB_SSLMODE = "require"
+
+# SMTP Configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 465
+SMTP_EMAIL = "adeelfateh33@gmail.com"
+SMTP_PASSWORD = "ptnr vhac mlsl qrru"
+
+# URLs
+FRONTEND_URL = "http://localhost:3000"
+BASE_URL = "http://localhost:8000"
+
+# Default password for admin-created users
+DEFAULT_USER_PASSWORD = "Test@123"
+
 # Import database setup
 from database import create_tables
 
