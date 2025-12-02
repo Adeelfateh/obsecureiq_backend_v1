@@ -6,6 +6,19 @@ from datetime import datetime, timedelta, timezone
 import hashlib, re, secrets, smtplib, os
 from email.mime.text import MIMEText
 from typing import Annotated
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Environment variables as constants
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "TempPass@123")
 
 from database import get_db
 from models import User, ResetToken
@@ -39,7 +52,7 @@ def validate_password(password: str) -> bool:
 def create_token(data: dict, minutes: int = 2500):
     expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     data.update({"exp": expire})
-    return jwt.encode(data, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 def send_email(to_email: str, subject: str, body: str):
     msg = MIMEText(body)
