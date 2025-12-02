@@ -43,14 +43,18 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS middleware
+origins = [
+    "http://localhost:8080",  # local dev
+    "https://obsecureiq-frontend-v1.vercel.app"  # production frontend
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins during development
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Create database tables
 create_tables()
 
