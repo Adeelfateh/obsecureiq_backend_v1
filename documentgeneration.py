@@ -49,11 +49,20 @@ def generate_document(
     print(f"- Client provided phone: {bool(client_provided_phone)}")
     print(f"- Client provided address: {bool(client_provided_address)}")
     
-    # Validate that at least one client-provided data exists
-    if not (client_provided_email or client_provided_phone or client_provided_address):
+    # Validate that ALL three client-provided data types exist
+    missing_data = []
+    if not client_provided_email:
+        missing_data.append("client-provided email")
+    if not client_provided_phone:
+        missing_data.append("client-provided phone number")
+    if not client_provided_address:
+        missing_data.append("client-provided address")
+    
+    if missing_data:
+        missing_items = ", ".join(missing_data)
         raise HTTPException(
             status_code=400, 
-            detail="Please add at least one client-provided email, phone number, or address before generating document"
+            detail=f"Please add the following required client-provided data: {missing_items}"
         )
 
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/c6cd3dab-bf74-4e93-98b3-6a1da378b730"
