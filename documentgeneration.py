@@ -4,7 +4,7 @@ import uuid
 import requests
 
 from database import get_db
-from models import Client, User
+from models import Client, User, ClientEmail, ClientPhoneNumber, ClientAddress
 from users import get_current_user
 
 router = APIRouter()
@@ -24,6 +24,31 @@ def generate_document(
 
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Check for at least one client-provided email
+    client_provided_email = db.query(ClientEmail).filter(
+        ClientEmail.client_id == client_id,
+        ClientEmail.status == "Client Provided"
+    ).first()
+    
+    # Check for at least one client-provided phone number
+    client_provided_phone = db.query(ClientPhoneNumber).filter(
+        ClientPhoneNumber.client_id == client_id,
+        ClientPhoneNumber.client_provided == "Yes"
+    ).first()
+    
+    # Check for at least one client-provided address
+    client_provided_address = db.query(ClientAddress).filter(
+        ClientAddress.client_id == client_id,
+        ClientAddress.client_provided == "Yes"
+    ).first()
+    
+    # Validate that at least one client-provided data exists
+    if not (client_provided_email or client_provided_phone or client_provided_address):
+        raise HTTPException(
+            status_code=400, 
+            detail="Please add at least one client-provided email, phone number, or address before generating document"
+        )
 
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/c6cd3dab-bf74-4e93-98b3-6a1da378b730"
     
