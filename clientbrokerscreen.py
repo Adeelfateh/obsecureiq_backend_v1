@@ -13,6 +13,7 @@ from schemas import BrokerScreenRecordResponse, BrokerScreenRecordUpdate
 from users import get_current_user
 
 router = APIRouter()
+BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
 
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
@@ -69,8 +70,7 @@ def create_broker_screen_records(
             shutil.copyfileobj(image.file, f)
 
         # Create complete image URL for database
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        url = f"{base_url}/uploads/client_images/{filename}"
+        url = f"{BASE_URL}/uploads/client_images/{filename}"
 
         record = ClientBrokerScreenRecord(
             client_id=client_id,
