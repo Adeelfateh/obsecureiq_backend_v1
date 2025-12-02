@@ -13,6 +13,7 @@ from schemas import BreachedRecordResponse
 from users import get_current_user
 
 router = APIRouter()
+BASE_URL = "https://obsecureiq-frontend-v1.vercel.app"
 
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
@@ -55,7 +56,6 @@ def upload_breached_records(
 
     _validate_client_access(client_id, current_user, db)
     
-    base_url = os.getenv("BASE_URL", "http://localhost:8000")
     uploaded = []
 
     for csv_file in csv_files:
@@ -69,7 +69,7 @@ def upload_breached_records(
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
-        file_url = f"{base_url}/uploads/client_images/{filename}"
+        file_url = f"{BASE_URL}/uploads/client_images/{filename}"
 
         record = ClientBreachedRecord(
             client_id=client_id,
@@ -132,8 +132,7 @@ def update_breached_record(
     except Exception as e:
         print(f"Warning: {e}")
 
-    base_url = os.getenv("BASE_URL", "http://localhost:8000")
-    record.file_url = f"{base_url}/uploads/client_images/{filename}"
+    record.file_url = f"{BASE_URL}/uploads/client_images/{filename}"
     record.updated_at = datetime.now(timezone.utc)
 
     db.commit()
