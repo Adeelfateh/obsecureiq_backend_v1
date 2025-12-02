@@ -3,22 +3,24 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
-import hashlib, re, secrets, smtplib, os
+import hashlib, re, secrets, smtplib
 from email.mime.text import MIMEText
 from typing import Annotated
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-# Environment variables as constants
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-SMTP_EMAIL = os.getenv("SMTP_EMAIL")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "TempPass@123")
+# Import hardcoded constants from main
+try:
+    from main import (
+        SECRET_KEY, ALGORITHM, SMTP_EMAIL, SMTP_PASSWORD, 
+        SMTP_SERVER, FRONTEND_URL, DEFAULT_USER_PASSWORD
+    )
+except ImportError:
+    # Fallback values if import fails
+    SECRET_KEY = "my-super-secret-jwt-key-2024-auth-system"
+    ALGORITHM = "HS256"
+    SMTP_EMAIL = "adeelfateh33@gmail.com"
+    SMTP_PASSWORD = "ptnr vhac mlsl qrru"
+    SMTP_SERVER = "smtp.gmail.com"
+    FRONTEND_URL = "http://localhost:3000"
+    DEFAULT_USER_PASSWORD = "Test@123"
 
 from database import get_db
 from models import User, ResetToken
@@ -57,19 +59,19 @@ def create_token(data: dict, minutes: int = 2500):
 def send_email(to_email: str, subject: str, body: str):
     msg = MIMEText(body)
     msg["Subject"] = subject
-    msg["From"] = os.getenv("SMTP_EMAIL")
+    msg["From"] = SMTP_EMAIL
     msg["To"] = to_email
 
-    server = smtplib.SMTP_SSL(os.getenv("SMTP_SERVER"), 465)
-    server.login(os.getenv("SMTP_EMAIL"), os.getenv("SMTP_PASSWORD"))
+    server = smtplib.SMTP_SSL(SMTP_SERVER, 465)
+    server.login(SMTP_EMAIL, SMTP_PASSWORD)
     server.send_message(msg)
     server.quit()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security),
                      db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(credentials.credentials, os.getenv("SECRET_KEY"),
-                             algorithms=[os.getenv("ALGORITHM")])
+        payload = jwt.decode(credentials.credentials, SECRET_KEY,
+                             algorithms=[ALGORITHM])
         email = payload.get("sub")
         if not email:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -171,7 +173,7 @@ def reset_password_request(req: PasswordResetRequest, db: Session = Depends(get_
     db.add(ResetToken(email=req.email, token=token, expires_at=expires))
     db.commit()
 
-    reset_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={token}"
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
     body = f"Click to reset your password: {reset_link}\n\nThis link expires in 1 hour."
 
     try:
@@ -271,7 +273,7 @@ def admin_add_user(user_data: AdminAddUser, admin_user: User = Depends(get_admin
     if user_data.status not in ["Active", "Inactive"]:
         raise HTTPException(status_code=400, detail="Invalid status. Must be Active or Inactive")
     
-    default_password = os.getenv("DEFAULT_USER_PASSWORD")
+    default_password = DEFAULT_USER_PASSWORD
     
     new_user = User(
         full_name=user_data.full_name.strip(),
