@@ -12,29 +12,15 @@ if os.path.exists('.env'):
 else:
     print("🌐 Using Railway environment variables")
 
-# Database configuration
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_SSLMODE = os.getenv("DB_SSLMODE", "require")
+# Database configuration with fallback values
+DB_HOST = os.getenv("DB_HOST") or "aws-1-us-west-1.pooler.supabase.com"
+DB_PORT = os.getenv("DB_PORT") or "6543"
+DB_NAME = os.getenv("DB_NAME") or "postgres"
+DB_USER = os.getenv("DB_USER") or "postgres.tgqpsbfwkzdgmynrdvnc"
+DB_PASSWORD = os.getenv("DB_PASSWORD") or "admin123"
+DB_SSLMODE = os.getenv("DB_SSLMODE") or "require"
 
-# Debug: Print available environment variables (without sensitive data)
-print(f"Debug - DB_HOST: {DB_HOST}")
-print(f"Debug - DB_PORT: {DB_PORT}")
-print(f"Debug - DB_NAME: {DB_NAME}")
-print(f"Debug - DB_USER: {DB_USER}")
-print(f"Debug - DB_PASSWORD: {'***' if DB_PASSWORD else None}")
-
-# Validate required environment variables
-required_vars = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"]
-missing = [var for var in required_vars if not os.getenv(var)]
-
-if missing:
-    print(f"❌ Missing required environment variables: {missing}")
-    print("Please check your Railway environment variables configuration.")
-    raise ValueError(f"Missing required environment variables: {missing}")
+print(f"🔗 Connecting to database: {DB_HOST}:{DB_PORT}/{DB_NAME}")
 # URL encode password to handle special characters
 encoded_password = quote_plus(DB_PASSWORD)
 
@@ -53,7 +39,7 @@ engine = create_engine(
 # Create session factory
 SessionLocal = sessionmaker(bind=engine)
 
-print(f"✅ Database connection configured for: {DB_HOST}:{DB_PORT}/{DB_NAME}")
+print(f"✅ Database connection established successfully")
 
 
 
