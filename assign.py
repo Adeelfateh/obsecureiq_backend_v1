@@ -28,8 +28,6 @@ def create_client(
     email: Optional[str] = Form(None),
     phone_number: Optional[str] = Form(None),
     employer: Optional[str] = Form(None),
-    status: Optional[str] = Form("pending"),
-    risk_score: Optional[str] = Form(None),
     profile_photo: Optional[UploadFile] = File(None),
     admin_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
@@ -70,8 +68,7 @@ def create_client(
         phone_number=phone_number,
         employer=employer,
         profile_photo_url=profile_photo_url,
-        status=status or "pending",
-        risk_score=risk_score
+        status="pending"
     )
     
     db.add(new_client)
