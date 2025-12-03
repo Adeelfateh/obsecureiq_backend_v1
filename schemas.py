@@ -67,6 +67,8 @@ class ClientResponse(BaseModel):
     employer: str | None = None
     analyst_id: int | None = None
     assigned_at: datetime | None = None
+    analyst_name: str | None = None
+    analyst_email: str | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
