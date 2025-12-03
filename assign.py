@@ -17,6 +17,7 @@ router = APIRouter()
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
 
 @router.post("/clients", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 def create_client(
@@ -45,8 +46,7 @@ def create_client(
             shutil.copyfileobj(profile_photo.file, f)
         
         # Create complete image URL
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        profile_photo_url = f"{base_url}/uploads/client_images/{filename}"
+        profile_photo_url = f"{BASE_URL}/uploads/client_images/{filename}"
     
     # Parse date_of_birth if provided
     parsed_date = None
