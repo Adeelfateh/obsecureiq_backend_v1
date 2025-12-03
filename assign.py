@@ -84,6 +84,15 @@ def create_client(
 def get_all_clients(db: Session = Depends(get_db), admin_user: User = Depends(get_admin_user)):
     """Get all clients (Admin only)"""
     clients = db.query(Client).order_by(Client.created_at.desc()).all()
+    
+    # Add analyst information to each client
+    for client in clients:
+        if client.analyst_id:
+            analyst = db.query(User).filter(User.id == client.analyst_id).first()
+            if analyst:
+                client.analyst_name = analyst.full_name
+                client.analyst_email = analyst.email
+    
     return clients
 
 @router.put("/clients/{client_id}/assign", status_code=status.HTTP_200_OK)
