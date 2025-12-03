@@ -54,8 +54,8 @@ class ClientResponse(BaseModel):
     id: uuid.UUID = Field(..., alias="ID")
     full_name: str | None = None
     other_names: str | None = None
-    date_of_birth: date | None = None
-    profile_photo_url: str | None = None
+    date_of_birth: datetime | None = None
+    profile_photo: str | None = None
     sex: str | None = None
     organization: str | None = None
     status: str | None = None
@@ -67,8 +67,6 @@ class ClientResponse(BaseModel):
     employer: str | None = None
     analyst_id: int | None = None
     assigned_at: datetime | None = None
-    analyst_name: str | None = None
-    analyst_email: str | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
