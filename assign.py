@@ -15,9 +15,6 @@ from users import get_admin_user, get_analyst_user, get_current_user
 router = APIRouter()
 BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
 
-# Upload directory setup
-UPLOAD_DIR = Path("uploads/client_images")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/clients", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 def create_client(
@@ -48,7 +45,8 @@ def create_client(
             shutil.copyfileobj(profile_photo.file, f)
         
         # Create complete image URL
-        profile_photo_url = f"{BASE_URL}/uploads/client_images/{filename}"
+        base_url = os.getenv("BASE_URL", "http://localhost:8000")
+        profile_photo_url = f"{base_url}/uploads/client_images/{filename}"
     
     # Parse date_of_birth if provided
     parsed_date = None
@@ -84,15 +82,6 @@ def create_client(
 def get_all_clients(db: Session = Depends(get_db), admin_user: User = Depends(get_admin_user)):
     """Get all clients (Admin only)"""
     clients = db.query(Client).order_by(Client.created_at.desc()).all()
-    
-    # Add analyst information to each client
-    for client in clients:
-        if client.analyst_id:
-            analyst = db.query(User).filter(User.id == client.analyst_id).first()
-            if analyst:
-                client.analyst_name = analyst.full_name
-                client.analyst_email = analyst.email
-    
     return clients
 
 @router.put("/clients/{client_id}/assign", status_code=status.HTTP_200_OK)
