@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 import uuid
+import requests
 
 from database import get_db
 from models import Client, ClientGeneratedDocument, User
@@ -52,6 +53,56 @@ def get_client_generated_documents(
             for doc in documents
         ]
     }
+@router.delete("/clients/{client_id}/documents/{document_id}", tags=["Generated Documents"])
+def delete_generated_document(
+    client_id: uuid.UUID,
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a generated document from database and Google Drive"""
+    client = _validate_client_access(client_id, current_user, db)
+    
+    # Find the document
+    document = db.query(ClientGeneratedDocument).filter(
+        ClientGeneratedDocument.id == document_id,
+        ClientGeneratedDocument.client_id == client_id
+    ).first()
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Send to webhook to delete from Google Drive
+    webhook_url = "https://obscureiq.app.n8n.cloud/webhook-test/a8e03ae5-3830-4f54-a921-e9d61f18a8eb"
+    
+    payload = {
+        "document_id": str(document_id),
+        "view_url": document.view_url,
+        "file_name": document.file_name
+    }
+    
+    try:
+        # Send to webhook first
+        response = requests.post(webhook_url, json=payload, timeout=30)
+        
+        # Delete from database regardless of webhook response
+        db.delete(document)
+        db.commit()
+        
+        return {
+            "message": "Document deleted successfully",
+            "document_id": str(document_id)
+        }
+        
+    except Exception as e:
+        # Still delete from database even if webhook fails
+        db.delete(document)
+        db.commit()
+        
+        return {
+            "message": "Document deleted successfully",
+            "document_id": str(document_id)
+        }
 
 @router.get("/admin/all-documents", tags=["Generated Documents"])
 def get_all_generated_documents(
