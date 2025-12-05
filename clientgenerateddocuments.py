@@ -85,24 +85,38 @@ def delete_generated_document(
         # Send to webhook first
         response = requests.post(webhook_url, json=payload, timeout=30)
         
-        # Delete from database regardless of webhook response
-        db.delete(document)
-        db.commit()
+        if response.status_code == 200:
+            webhook_data = response.json()
+            if webhook_data.get("status") == "Success":
+                # Only delete from database if webhook succeeded
+                db.delete(document)
+                db.commit()
+                
+                return {
+                    "message": "Document deleted successfully",
+                    "document_id": str(document_id)
+                }
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to delete from Google Drive: {webhook_data.get('message', 'Unknown error')}"
+                )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Webhook failed with status {response.status_code}"
+            )
         
-        return {
-            "message": "Document deleted successfully",
-            "document_id": str(document_id)
-        }
-        
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to connect to Google Drive: {str(e)}"
+        )
     except Exception as e:
-        # Still delete from database even if webhook fails
-        db.delete(document)
-        db.commit()
-        
-        return {
-            "message": "Document deleted successfully",
-            "document_id": str(document_id)
-        }
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error deleting document: {str(e)}"
+        )
 
 @router.get("/admin/all-documents", tags=["Generated Documents"])
 def get_all_generated_documents(
