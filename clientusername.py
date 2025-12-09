@@ -6,8 +6,9 @@ import uuid
 
 from database import get_db
 from models import Client, ClientUsername, User
-from schemas import UsernameCreate, UsernameUpdate, UsernameResponse
+from schemas import UsernameCreate, UsernameUpdate, UsernameResponse, BulkUsernameUpload
 from users import get_current_user
+import requests
 
 router = APIRouter()
 
