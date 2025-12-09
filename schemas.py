@@ -157,6 +157,7 @@ class RelativeAssociateResponse(BaseModel):
 
 class BulkRelativeUpload(BaseModel):
     relatives_text: str
+    relationship_type: Optional[str] = "Associate"
 
 # Username Schemas
 class UsernameCreate(BaseModel):
