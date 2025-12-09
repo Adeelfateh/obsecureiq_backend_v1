@@ -56,10 +56,15 @@ def add_client_phone_number(
             detail="client_provided must be 'Yes' or 'No'"
         )
     
+    # Add +1 if phone number doesn't start with +
+    phone_number = phone_data.phone_number.strip()
+    if not phone_number.startswith('+'):
+        phone_number = '+1' + phone_number
+    
     # Check duplicate
     existing = db.query(ClientPhoneNumber).filter(
         ClientPhoneNumber.client_id == client_id,
-        ClientPhoneNumber.phone_number == phone_data.phone_number
+        ClientPhoneNumber.phone_number == phone_number
     ).first()
     
     if existing:
@@ -68,7 +73,7 @@ def add_client_phone_number(
     # Create new phone number
     new_phone = ClientPhoneNumber(
         client_id=client_id,
-        phone_number=phone_data.phone_number,
+        phone_number=phone_number,
         client_provided=phone_data.client_provided
     )
     
