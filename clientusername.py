@@ -146,3 +146,45 @@ def delete_client_username(
     db.commit()
     
     return {"message": "Username deleted successfully"}
+
+
+@router.post("/clients/{client_id}/usernames/bulk-upload", tags=["Client Usernames"])
+def bulk_upload_usernames(
+    client_id: uuid.UUID,
+    bulk_data: BulkUsernameUpload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Send raw usernames directly to n8n webhook and return result"""
+    
+    # Check client access
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    if current_user.role == "Analyst" and client.analyst_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    webhook_url = "https://obscureiq.app.n8n.cloud/webhook/0853f9e7-1d51-453d-8719-8aa57a81ec20"
+    
+    payload = {
+        "usernames": bulk_data.usernames_text,
+        "client_id": str(client_id)
+    }
+    
+    try:
+        response = requests.post(webhook_url, json=payload, timeout=60)
+        n8n_result = response.json()
+        
+        if n8n_result.get("success") is True:
+            return {
+                "status": "success",
+                "message": n8n_result.get("message", "Usernames added successfully")
+            }
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=n8n_result.get("message", "Failed to insert usernames")
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
