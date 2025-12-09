@@ -56,7 +56,7 @@ def add_client_username(
     ).first()
     
     if existing:
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise HTTPException(status_code=400, detail="Username already exists for this client")
     
     # Create new username
     new_username = ClientUsername(
@@ -104,7 +104,7 @@ def edit_client_username(
         ).first()
         
         if existing:
-            raise HTTPException(status_code=400, detail="Username already exists")
+            raise HTTPException(status_code=400, detail="Username already exists for this client")
     
     # Update only the fields that are provided
     update_data = username_data.model_dump(exclude_unset=True)
@@ -147,7 +147,6 @@ def delete_client_username(
     
     return {"message": "Username deleted successfully"}
 
-
 @router.post("/clients/{client_id}/usernames/bulk-upload", tags=["Client Usernames"])
 def bulk_upload_usernames(
     client_id: uuid.UUID,
@@ -165,7 +164,8 @@ def bulk_upload_usernames(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    webhook_url = "https://obscureiq.app.n8n.cloud/webhook/0853f9e7-1d51-453d-8719-8aa57a81ec20"
+    # NOTE: If webhook is not active, will fallback to direct database insert
+    webhook_url = "https://obscureiq.app.n8n.cloud/webhook/aa83c014-36f6-4206-acb2-10507cbe5eb0"
     
     payload = {
         "usernames": bulk_data.usernames_text,
@@ -174,9 +174,46 @@ def bulk_upload_usernames(
     
     try:
         response = requests.post(webhook_url, json=payload, timeout=60)
-        n8n_result = response.json()
         
-        if n8n_result.get("success") is True:
+        # Check if response is JSON
+        try:
+            n8n_result = response.json()
+        except:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Webhook returned non-JSON response: {response.text[:200]}"
+            )
+        
+        # Check for n8n webhook registration error - if webhook not active, insert directly
+        if "detail" in n8n_result and "not registered" in str(n8n_result.get("detail", "")):
+            # Fallback: Insert directly without webhook
+            usernames_list = bulk_data.usernames_text.strip().split('\n')
+            added_count = 0
+            
+            for username_line in usernames_list:
+                username = username_line.strip()
+                if username:
+                    # Check duplicate
+                    existing = db.query(ClientUsername).filter(
+                        ClientUsername.client_id == client_id,
+                        ClientUsername.username == username
+                    ).first()
+                    
+                    if not existing:
+                        new_username = ClientUsername(
+                            client_id=client_id,
+                            username=username
+                        )
+                        db.add(new_username)
+                        added_count += 1
+            
+            db.commit()
+            return {
+                "status": "success",
+                "message": f"{added_count} username(s) added successfully (webhook inactive, used direct insert)"
+            }
+        
+        if n8n_result.get("success") is True or n8n_result.get("status") == "Success":
             return {
                 "status": "success",
                 "message": n8n_result.get("message", "Usernames added successfully")
@@ -184,7 +221,9 @@ def bulk_upload_usernames(
         else:
             raise HTTPException(
                 status_code=400,
-                detail=n8n_result.get("message", "Failed to insert usernames")
+                detail=n8n_result.get("message") or n8n_result.get("detail") or "Failed to insert usernames"
             )
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Webhook error: {str(e)}")
