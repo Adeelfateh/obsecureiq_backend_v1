@@ -164,6 +164,9 @@ class UsernameCreate(BaseModel):
 
 class UsernameUpdate(BaseModel):
     username: Optional[str] = None
+    
+class BulkUsernameUpload(BaseModel):
+    usernames_text: str
 
 class UsernameResponse(BaseModel):
     id: uuid.UUID
