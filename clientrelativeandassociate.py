@@ -111,21 +111,25 @@ def edit_client_relative(
             detail="relationship_type must be 'Relative' or 'Associate'"
         )
     
-    # Check duplicate if name is being changed
-    if relative_data.name and relative_data.name != relative_record.name:
-        existing = db.query(ClientRelativeAssociate).filter(
-            ClientRelativeAssociate.client_id == client_id,
-            ClientRelativeAssociate.name == relative_data.name,
-            ClientRelativeAssociate.id != relative_id
-        ).first()
+    # Check duplicate if name is being changed (case-insensitive)
+    if relative_data.name:
+        normalized_name = relative_data.name.strip()
         
-        if existing:
-            raise HTTPException(status_code=400, detail="Name already exists")
+        if normalized_name.lower() != relative_record.name.strip().lower():
+            existing = db.query(ClientRelativeAssociate).filter(
+                ClientRelativeAssociate.client_id == client_id,
+                ClientRelativeAssociate.id != relative_id
+            ).all()
+            
+            for record in existing:
+                if record.name.strip().lower() == normalized_name.lower():
+                    raise HTTPException(status_code=400, detail="This relative/associate name already exists for this client")
+        
+        relative_record.name = normalized_name
     
-    # Update only the fields that are provided
-    update_data = relative_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(relative_record, field, value)
+    # Update relationship_type if provided
+    if relative_data.relationship_type is not None:
+        relative_record.relationship_type = relative_data.relationship_type
     
     relative_record.updated_at = datetime.now(timezone.utc)
     
