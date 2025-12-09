@@ -56,19 +56,20 @@ def add_client_relative(
             detail="relationship_type must be 'Relative' or 'Associate'"
         )
     
-    # Check duplicate name
+    # Normalize and check duplicate name (case-insensitive)
+    normalized_name = relative_data.name.strip()
     existing = db.query(ClientRelativeAssociate).filter(
-        ClientRelativeAssociate.client_id == client_id,
-        ClientRelativeAssociate.name == relative_data.name
-    ).first()
+        ClientRelativeAssociate.client_id == client_id
+    ).all()
     
-    if existing:
-        raise HTTPException(status_code=400, detail="Name already exists")
+    for record in existing:
+        if record.name.strip().lower() == normalized_name.lower():
+            raise HTTPException(status_code=400, detail="This relative/associate name already exists for this client")
     
     # Create new relative/associate
     new_relative = ClientRelativeAssociate(
         client_id=client_id,
-        name=relative_data.name,
+        name=normalized_name,
         relationship_type=relative_data.relationship_type
     )
     
