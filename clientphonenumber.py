@@ -4,14 +4,23 @@ from typing import List
 from datetime import datetime, timezone
 import uuid
 import requests
-
+import re
 from database import get_db
 from models import Client, ClientPhoneNumber, User
 from schemas import PhoneNumberCreate, PhoneNumberUpdate, PhoneNumberResponse, BulkPhoneUpload
 from users import get_current_user
 
 router = APIRouter()
-
+def clean_phone_number(phone: str) -> str:
+    """Clean and normalize phone number by removing formatting characters"""
+    # Remove all characters except digits and +
+    cleaned = re.sub(r'[^0-9+]', '', phone.strip())
+    
+    # Add +1 if doesn't start with +
+    if not cleaned.startswith('+'):
+        cleaned = '+1' + cleaned
+    
+    return cleaned
 @router.get("/clients/{client_id}/phone-numbers", response_model=List[PhoneNumberResponse], tags=["Client Phone Numbers"])
 def get_client_phone_numbers(
     client_id: uuid.UUID,
@@ -56,10 +65,7 @@ def add_client_phone_number(
             detail="client_provided must be 'Yes' or 'No'"
         )
     
-    # Add +1 if phone number doesn't start with +
-    phone_number = phone_data.phone_number.strip()
-    if not phone_number.startswith('+'):
-        phone_number = '+1' + phone_number
+    phone_number = clean_phone_number(phone_data.phone_number)
     
     # Check duplicate
     existing = db.query(ClientPhoneNumber).filter(
