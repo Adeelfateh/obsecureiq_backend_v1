@@ -184,19 +184,70 @@ def bulk_upload_relatives(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Validate relationship_type
+    if bulk_data.relationship_type and bulk_data.relationship_type not in ["Relative", "Associate"]:
+        raise HTTPException(
+            status_code=400,
+            detail="relationship_type must be 'Relative' or 'Associate'"
+        )
+    
     # n8n Webhook URL
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/a68f0e08-aa20-470d-b0e5-fbda8968d7e2"
     
     payload = {
-        "relative_name": bulk_data.relatives_text,  # Raw uploaded block
+        "relative_name": bulk_data.relatives_text,
+        "relationship_type": bulk_data.relationship_type or "Associate",
         "client_id": str(client_id)
     }
     
     try:
         response = requests.post(webhook_url, json=payload, timeout=60)
 
-        # n8n always returns JSON because of responseMode="responseNode"
-        n8n_result = response.json()
+        # Check if response is JSON
+        try:
+            n8n_result = response.json()
+        except:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Webhook returned non-JSON response: {response.text[:200]}"
+            )
+
+        # Check for n8n webhook registration error - if webhook not active, insert directly
+        if "detail" in n8n_result and "not registered" in str(n8n_result.get("detail", "")):
+            # Fallback: Insert directly without webhook
+            names_list = bulk_data.relatives_text.strip().split('\n')
+            added_count = 0
+            relationship_type = bulk_data.relationship_type or "Associate"
+            
+            for name_line in names_list:
+                name = name_line.strip()
+                if name:
+                    # Normalize and check duplicate (case-insensitive)
+                    normalized_name = name.strip()
+                    existing = db.query(ClientRelativeAssociate).filter(
+                        ClientRelativeAssociate.client_id == client_id
+                    ).all()
+                    
+                    is_duplicate = False
+                    for record in existing:
+                        if record.name.strip().lower() == normalized_name.lower():
+                            is_duplicate = True
+                            break
+                    
+                    if not is_duplicate:
+                        new_relative = ClientRelativeAssociate(
+                            client_id=client_id,
+                            name=normalized_name,
+                            relationship_type=relationship_type
+                        )
+                        db.add(new_relative)
+                        added_count += 1
+            
+            db.commit()
+            return {
+                "status": "success",
+                "message": f"{added_count} relative(s) added successfully (webhook inactive, used direct insert)"
+            }
 
         # n8n SUCCESS
         if n8n_result.get("status") == "Success" or n8n_result.get("success") is True:
@@ -211,5 +262,7 @@ def bulk_upload_relatives(
             detail=n8n_result.get("message", "Failed to insert relatives")
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Webhook error: {str(e)}")
