@@ -5,12 +5,14 @@ from datetime import datetime, timezone
 import uuid
 import requests
 import re
+
 from database import get_db
 from models import Client, ClientPhoneNumber, User
 from schemas import PhoneNumberCreate, PhoneNumberUpdate, PhoneNumberResponse, BulkPhoneUpload
 from users import get_current_user
 
 router = APIRouter()
+
 def clean_phone_number(phone: str) -> str:
     """Clean and normalize phone number by removing formatting characters"""
     # Remove all characters except digits and +
@@ -21,6 +23,7 @@ def clean_phone_number(phone: str) -> str:
         cleaned = '+1' + cleaned
     
     return cleaned
+
 @router.get("/clients/{client_id}/phone-numbers", response_model=List[PhoneNumberResponse], tags=["Client Phone Numbers"])
 def get_client_phone_numbers(
     client_id: uuid.UUID,
@@ -65,6 +68,7 @@ def add_client_phone_number(
             detail="client_provided must be 'Yes' or 'No'"
         )
     
+    # Clean and normalize phone number
     phone_number = clean_phone_number(phone_data.phone_number)
     
     # Check duplicate
@@ -121,21 +125,26 @@ def edit_client_phone_number(
             detail="client_provided must be 'Yes' or 'No'"
         )
     
-    # Check duplicate if phone number is being changed
-    if phone_data.phone_number and phone_data.phone_number != phone_record.phone_number:
-        existing = db.query(ClientPhoneNumber).filter(
-            ClientPhoneNumber.client_id == client_id,
-            ClientPhoneNumber.phone_number == phone_data.phone_number,
-            ClientPhoneNumber.id != phone_id
-        ).first()
+    # Clean and normalize phone number if being changed
+    if phone_data.phone_number:
+        cleaned_phone = clean_phone_number(phone_data.phone_number)
         
-        if existing:
-            raise HTTPException(status_code=400, detail="Phone number already exists")
+        # Check duplicate with cleaned phone number
+        if cleaned_phone != phone_record.phone_number:
+            existing = db.query(ClientPhoneNumber).filter(
+                ClientPhoneNumber.client_id == client_id,
+                ClientPhoneNumber.phone_number == cleaned_phone,
+                ClientPhoneNumber.id != phone_id
+            ).first()
+            
+            if existing:
+                raise HTTPException(status_code=400, detail="Phone number already exists")
+        
+        phone_record.phone_number = cleaned_phone
     
-    # Update only the fields that are provided
-    update_data = phone_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(phone_record, field, value)
+    # Update client_provided if provided
+    if phone_data.client_provided is not None:
+        phone_record.client_provided = phone_data.client_provided
     
     phone_record.updated_at = datetime.now(timezone.utc)
     
@@ -190,15 +199,14 @@ def bulk_upload_phone_numbers(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Normalize phone numbers: add +1 if no country code
+    # Clean and normalize phone numbers
     phone_lines = bulk_data.phone_numbers_text.strip().split('\n')
     normalized_phones = []
     for line in phone_lines:
         phone = line.strip()
         if phone:
-            if not phone.startswith('+'):
-                phone = '+1' + phone
-            normalized_phones.append(phone)
+            cleaned_phone = clean_phone_number(phone)
+            normalized_phones.append(cleaned_phone)
     
     normalized_text = '\n'.join(normalized_phones)
     
