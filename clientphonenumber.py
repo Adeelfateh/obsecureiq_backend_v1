@@ -184,10 +184,22 @@ def bulk_upload_phone_numbers(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Normalize phone numbers: add +1 if no country code
+    phone_lines = bulk_data.phone_numbers_text.strip().split('\n')
+    normalized_phones = []
+    for line in phone_lines:
+        phone = line.strip()
+        if phone:
+            if not phone.startswith('+'):
+                phone = '+1' + phone
+            normalized_phones.append(phone)
+    
+    normalized_text = '\n'.join(normalized_phones)
+    
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/92457ed2-aad5-4981-b88c-cd65f11b3a8b"
     
     payload = {
-        "phone_number": bulk_data.phone_numbers_text,
+        "phone_number": normalized_text,
         "client_id": str(client_id)
     }
     
