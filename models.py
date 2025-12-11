@@ -42,6 +42,8 @@ class Client(Base):
     email = Column(String, nullable=True)
     phone_number = Column(String, nullable=True)
     employer = Column(Text, nullable=True)
+    darkside_module = Column(Boolean, default=False, nullable=False)
+    snubase_module = Column(Boolean, default=False, nullable=False)
 
     # Assignment fields
     analyst_id = Column(Integer, ForeignKey("users.id"), nullable=True)
