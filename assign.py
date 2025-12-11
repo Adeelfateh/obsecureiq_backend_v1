@@ -29,6 +29,8 @@ def create_client(
     email: Optional[str] = Form(None),
     phone_number: Optional[str] = Form(None),
     employer: Optional[str] = Form(None),
+    osint_module: bool = Form(False),
+    snubase_module: bool = Form(False),
     profile_photo: Optional[UploadFile] = File(None),
     admin_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
@@ -67,6 +69,8 @@ def create_client(
         email=email,
         phone_number=phone_number,
         employer=employer,
+        osint_module=osint_module,
+        snubase_module=snubase_module,
         profile_photo_url=profile_photo_url,
         status="pending"
     )
@@ -132,6 +136,57 @@ def unassign_client(
     db.commit()
 
     return {"message": "Client unassigned successfully"}
+
+@router.put("/clients/{client_id}", response_model=ClientResponse)
+def update_client(
+    client_id: uuid.UUID,
+    full_name: Optional[str] = Form(None),
+    other_names: Optional[str] = Form(None),
+    date_of_birth: Optional[str] = Form(None),
+    sex: Optional[str] = Form(None),
+    organization: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    employer: Optional[str] = Form(None),
+    osint_module: Optional[bool] = Form(None),
+    snubase_module: Optional[bool] = Form(None),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update client (Admin only)"""
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    # Update only provided fields
+    if full_name is not None:
+        client.full_name = full_name
+    if other_names is not None:
+        client.other_names = other_names
+    if date_of_birth is not None:
+        try:
+            client.date_of_birth = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    if sex is not None:
+        client.sex = sex
+    if organization is not None:
+        client.organization = organization
+    if email is not None:
+        client.email = email
+    if phone_number is not None:
+        client.phone_number = phone_number
+    if employer is not None:
+        client.employer = employer
+    if osint_module is not None:
+        client.osint_module = osint_module
+    if snubase_module is not None:
+        client.snubase_module = snubase_module
+    
+    db.commit()
+    db.refresh(client)
+    
+    return client
 
 @router.delete("/clients/{client_id}", status_code=status.HTTP_200_OK)
 def delete_client(
