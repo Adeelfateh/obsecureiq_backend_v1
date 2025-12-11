@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone
+from pathlib import Path
 import uuid
+import shutil
+import os
 
 from database import get_db
 from models import Client, ClientSocialAccount, User
@@ -10,6 +13,10 @@ from schemas import SocialAccountCreate, SocialAccountUpdate, SocialAccountRespo
 from users import get_current_user
 
 router = APIRouter()
+BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
+# Upload directory setup
+UPLOAD_DIR = Path("uploads/client_images")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.get("/clients/{client_id}/social-accounts", response_model=List[SocialAccountResponse], tags=["Client Social Media"])
 def get_client_social_accounts(
@@ -35,11 +42,16 @@ def get_client_social_accounts(
 @router.post("/clients/{client_id}/social-accounts", response_model=SocialAccountResponse, tags=["Client Social Media"])
 def add_client_social_account(
     client_id: uuid.UUID,
-    social_data: SocialAccountCreate,
+    platform: str = Form(...),
+    profile_url: str = Form(...),
+    what_is_exposed: Optional[str] = Form(None),
+    engagement_level: Optional[str] = Form(None),
+    confidence_level: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Add a new social media account"""
+    """Add a new social media account with optional image"""
     
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -48,18 +60,17 @@ def add_client_social_account(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Only validate required fields
-    if not social_data.platform or not social_data.platform.strip():
+    # Validate required fields
+    if not platform or not platform.strip():
         raise HTTPException(status_code=400, detail="Platform is required")
     
-    if not social_data.profile_url or not social_data.profile_url.strip():
+    if not profile_url or not profile_url.strip():
         raise HTTPException(status_code=400, detail="Profile URL is required")
     
-    # Check for duplicate - ONLY if exact same URL exists (regardless of platform)
-    # This allows multiple LinkedIn/Instagram accounts with different URLs
+    # Check for duplicate URL
     existing = db.query(ClientSocialAccount).filter(
         ClientSocialAccount.client_id == client_id,
-        ClientSocialAccount.profile_url == social_data.profile_url
+        ClientSocialAccount.profile_url == profile_url
     ).first()
     
     if existing:
@@ -68,14 +79,32 @@ def add_client_social_account(
             detail="This profile URL already exists for this client"
         )
     
-    # Create new social account - allows multiple accounts per platform
+    # Handle image upload
+    image_url = None
+    if image:
+        ext = Path(image.filename).suffix or ".jpg"
+        filename = f"{uuid.uuid4()}{ext}"
+        filepath = UPLOAD_DIR / filename
+        
+        with filepath.open("wb") as f:
+            shutil.copyfileobj(image.file, f)
+        
+        image_url = f"{BASE_URL}/uploads/client_images/{filename}"
+    
+    # Parse what_is_exposed if provided
+    exposed_list = []
+    if what_is_exposed:
+        exposed_list = [item.strip() for item in what_is_exposed.split(',') if item.strip()]
+    
+    # Create new social account
     new_social_account = ClientSocialAccount(
         client_id=client_id,
-        platform=social_data.platform,
-        profile_url=social_data.profile_url,
-        what_is_exposed=social_data.what_is_exposed or [],
-        engagement_level=social_data.engagement_level,
-        confidence_level=social_data.confidence_level
+        platform=platform.strip(),
+        profile_url=profile_url.strip(),
+        what_is_exposed=exposed_list,
+        engagement_level=engagement_level,
+        confidence_level=confidence_level,
+        image_url=image_url
     )
     
     db.add(new_social_account)
@@ -88,11 +117,16 @@ def add_client_social_account(
 def edit_client_social_account(
     client_id: uuid.UUID,
     social_account_id: uuid.UUID,
-    social_data: SocialAccountUpdate,
+    platform: Optional[str] = Form(None),
+    profile_url: Optional[str] = Form(None),
+    what_is_exposed: Optional[str] = Form(None),
+    engagement_level: Optional[str] = Form(None),
+    confidence_level: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Edit a social media account - works for both modal and inline editing"""
+    """Edit a social media account with optional image update"""
     
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -109,12 +143,11 @@ def edit_client_social_account(
     if not social_record:
         raise HTTPException(status_code=404, detail="Social media account not found")
     
-    # Check duplicate only if profile_url is being changed
-    # Only prevent same URL, allow multiple accounts per platform
-    if social_data.profile_url and social_data.profile_url != social_record.profile_url:
+    # Check duplicate URL if being changed
+    if profile_url and profile_url != social_record.profile_url:
         existing = db.query(ClientSocialAccount).filter(
             ClientSocialAccount.client_id == client_id,
-            ClientSocialAccount.profile_url == social_data.profile_url,
+            ClientSocialAccount.profile_url == profile_url,
             ClientSocialAccount.id != social_account_id
         ).first()
         
@@ -124,10 +157,38 @@ def edit_client_social_account(
                 detail="This profile URL already exists"
             )
     
-    # Update only the fields that are provided
-    update_data = social_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(social_record, field, value)
+    # Handle image upload
+    if image:
+        # Delete old image if exists
+        if social_record.image_url:
+            try:
+                old_path = UPLOAD_DIR / Path(social_record.image_url).name
+                if old_path.exists():
+                    old_path.unlink()
+            except Exception as e:
+                print(f"Warning: Could not delete old image: {str(e)}")
+        
+        # Save new image
+        ext = Path(image.filename).suffix or ".jpg"
+        filename = f"{uuid.uuid4()}{ext}"
+        filepath = UPLOAD_DIR / filename
+        
+        with filepath.open("wb") as f:
+            shutil.copyfileobj(image.file, f)
+        
+        social_record.image_url = f"{BASE_URL}/uploads/client_images/{filename}"
+    
+    # Update other fields if provided
+    if platform is not None:
+        social_record.platform = platform.strip()
+    if profile_url is not None:
+        social_record.profile_url = profile_url.strip()
+    if what_is_exposed is not None:
+        social_record.what_is_exposed = [item.strip() for item in what_is_exposed.split(',') if item.strip()] if what_is_exposed else []
+    if engagement_level is not None:
+        social_record.engagement_level = engagement_level
+    if confidence_level is not None:
+        social_record.confidence_level = confidence_level
     
     social_record.updated_at = datetime.now(timezone.utc)
     
@@ -159,6 +220,15 @@ def delete_client_social_account(
     
     if not social_record:
         raise HTTPException(status_code=404, detail="Social media account not found")
+    
+    # Delete associated image if exists
+    if social_record.image_url:
+        try:
+            old_path = UPLOAD_DIR / Path(social_record.image_url).name
+            if old_path.exists():
+                old_path.unlink()
+        except Exception as e:
+            print(f"Warning: Could not delete image: {str(e)}")
     
     db.delete(social_record)
     db.commit()
