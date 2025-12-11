@@ -29,7 +29,7 @@ def create_client(
     email: Optional[str] = Form(None),
     phone_number: Optional[str] = Form(None),
     employer: Optional[str] = Form(None),
-    osint_module: bool = Form(False),
+    darkside_module: bool = Form(False),
     snubase_module: bool = Form(False),
     profile_photo: Optional[UploadFile] = File(None),
     admin_user: User = Depends(get_admin_user),
@@ -69,7 +69,7 @@ def create_client(
         email=email,
         phone_number=phone_number,
         employer=employer,
-        osint_module=osint_module,
+        darkside_module=darkside_module,
         snubase_module=snubase_module,
         profile_photo_url=profile_photo_url,
         status="pending"
@@ -148,7 +148,7 @@ def update_client(
     email: Optional[str] = Form(None),
     phone_number: Optional[str] = Form(None),
     employer: Optional[str] = Form(None),
-    osint_module: Optional[bool] = Form(None),
+    darkside_module: Optional[bool] = Form(None),
     snubase_module: Optional[bool] = Form(None),
     admin_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
@@ -178,8 +178,8 @@ def update_client(
         client.phone_number = phone_number
     if employer is not None:
         client.employer = employer
-    if osint_module is not None:
-        client.osint_module = osint_module
+    if darkside_module is not None:
+        client.darkside_module = darkside_module
     if snubase_module is not None:
         client.snubase_module = snubase_module
     
