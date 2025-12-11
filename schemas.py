@@ -65,6 +65,8 @@ class ClientResponse(BaseModel):
     email: str | None = None
     phone_number: str | None = None
     employer: str | None = None
+    darkside_module: bool = False
+    snubase_module: bool = False
     analyst_id: int | None = None
     assigned_at: datetime | None = None
 
