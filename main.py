@@ -47,7 +47,6 @@ from facialrecognition import router as facialrecognition_router
 from digitalrecog import router as digitalrecog_router
 from clientbusiness import router as clientbusiness_router
 from clientbrokerscreen import router as clientbrokerscreen_router
-from clientbreached import router as clientbreached_router
 from documentgeneration import router as documentgeneration_router
 from clientserpanalysis import router as clientserpanalysis_router
 from clientaianalysis import router as clientaianalysis_router
@@ -98,7 +97,6 @@ app.include_router(facialrecognition_router, tags=["Facial Recognition"])
 app.include_router(digitalrecog_router, tags=["Digital Recognition"])
 app.include_router(clientbusiness_router, tags=["Client Business Information"])
 app.include_router(clientbrokerscreen_router, tags=["Broker Screen Records"])
-app.include_router(clientbreached_router, tags=["Breached Records"])
 app.include_router(documentgeneration_router, tags=["Document Generation"])
 app.include_router(clientserpanalysis_router, tags=["SERP Analysis"])
 app.include_router(clientaianalysis_router, tags=["AI Analysis"])
