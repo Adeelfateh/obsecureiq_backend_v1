@@ -389,15 +389,7 @@ class FacialRecognitionSiteResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Breached Record Schemas
-class BreachedRecordResponse(BaseModel):
-    id: uuid.UUID
-    client_id: uuid.UUID
-    file_url: str
-    created_at: datetime
-    updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
 
 # SERP Analysis Schemas
 class SerpAnalysisResponse(BaseModel):
