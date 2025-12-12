@@ -423,6 +423,7 @@ class LeakedDatasetResponse(BaseModel):
     dataset_name: str
     email: str
     leak_data: str
+    module: str | None
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
