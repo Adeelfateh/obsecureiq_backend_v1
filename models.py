@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, ForeignKey
+    from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
@@ -251,6 +251,7 @@ class ClientLeakedDataset(Base):
     dataset_name = Column(Text, nullable=False) 
     leak_data = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
+    module = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
