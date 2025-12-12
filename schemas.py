@@ -459,42 +459,43 @@ class ClientMatchingResultResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 # Property Assessment Schemas
+# Property Assessment Schemas
 class FrontHouseRecordCreate(BaseModel):
-    home_visible_from_street: Optional[str] = None
-    exterior_lighting: Optional[str] = None
-    surveillance_cameras: Optional[str] = None
-    motion_sensors_alarms: Optional[str] = None
-    ground_floor_windows_accessible: Optional[str] = None
-    bars_locks_reinforced_glass: Optional[str] = None
-    gate_fence: Optional[str] = None
+    home_visible_from_street: Optional[bool] = None
+    exterior_lighting: Optional[bool] = None
+    surveillance_cameras: Optional[bool] = None
+    motion_sensors_alarms: Optional[bool] = None
+    ground_floor_windows_accessible: Optional[bool] = None
+    bars_locks_reinforced_glass: Optional[bool] = None
+    gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
-    security_signage: Optional[str] = None
+    security_signage: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class FrontHouseRecordUpdate(BaseModel):
-    home_visible_from_street: Optional[str] = None
-    exterior_lighting: Optional[str] = None
-    surveillance_cameras: Optional[str] = None
-    motion_sensors_alarms: Optional[str] = None
-    ground_floor_windows_accessible: Optional[str] = None
-    bars_locks_reinforced_glass: Optional[str] = None
-    gate_fence: Optional[str] = None
+    home_visible_from_street: Optional[bool] = None
+    exterior_lighting: Optional[bool] = None
+    surveillance_cameras: Optional[bool] = None
+    motion_sensors_alarms: Optional[bool] = None
+    ground_floor_windows_accessible: Optional[bool] = None
+    bars_locks_reinforced_glass: Optional[bool] = None
+    gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
-    security_signage: Optional[str] = None
+    security_signage: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class FrontHouseRecordResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
-    home_visible_from_street: str | None
-    exterior_lighting: str | None
-    surveillance_cameras: str | None
-    motion_sensors_alarms: str | None
-    ground_floor_windows_accessible: str | None
-    bars_locks_reinforced_glass: str | None
-    gate_fence: str | None
+    home_visible_from_street: bool | None
+    exterior_lighting: bool | None
+    surveillance_cameras: bool | None
+    motion_sensors_alarms: bool | None
+    ground_floor_windows_accessible: bool | None
+    bars_locks_reinforced_glass: bool | None
+    gate_fence: bool | None
     obstruction_of_view: str | None
-    security_signage: str | None
+    security_signage: bool | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
@@ -502,44 +503,44 @@ class FrontHouseRecordResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class BackHouseRecordCreate(BaseModel):
-    rear_entry_door: Optional[str] = None
-    ground_floor_windows_accessible: Optional[str] = None
-    rear_exterior_lighting: Optional[str] = None
-    bars_locks_reinforced_glass: Optional[str] = None
-    gate_fence: Optional[str] = None
+    rear_entry_door: Optional[bool] = None
+    ground_floor_windows_accessible: Optional[bool] = None
+    rear_exterior_lighting: Optional[bool] = None
+    bars_locks_reinforced_glass: Optional[bool] = None
+    gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
-    surveillance_cameras: Optional[str] = None
+    surveillance_cameras: Optional[bool] = None
     landscaping_concealment: Optional[str] = None
-    outbuildings_visible: Optional[str] = None
-    pet_door_present: Optional[str] = None
+    outbuildings_visible: Optional[bool] = None
+    pet_door_present: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class BackHouseRecordUpdate(BaseModel):
-    rear_entry_door: Optional[str] = None
-    ground_floor_windows_accessible: Optional[str] = None
-    rear_exterior_lighting: Optional[str] = None
-    bars_locks_reinforced_glass: Optional[str] = None
-    gate_fence: Optional[str] = None
+    rear_entry_door: Optional[bool] = None
+    ground_floor_windows_accessible: Optional[bool] = None
+    rear_exterior_lighting: Optional[bool] = None
+    bars_locks_reinforced_glass: Optional[bool] = None
+    gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
-    surveillance_cameras: Optional[str] = None
+    surveillance_cameras: Optional[bool] = None
     landscaping_concealment: Optional[str] = None
-    outbuildings_visible: Optional[str] = None
-    pet_door_present: Optional[str] = None
+    outbuildings_visible: Optional[bool] = None
+    pet_door_present: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class BackHouseRecordResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
-    rear_entry_door: str | None
-    ground_floor_windows_accessible: str | None
-    rear_exterior_lighting: str | None
-    bars_locks_reinforced_glass: str | None
-    gate_fence: str | None
+    rear_entry_door: bool | None
+    ground_floor_windows_accessible: bool | None
+    rear_exterior_lighting: bool | None
+    bars_locks_reinforced_glass: bool | None
+    gate_fence: bool | None
     obstruction_of_view: str | None
-    surveillance_cameras: str | None
+    surveillance_cameras: bool | None
     landscaping_concealment: str | None
-    outbuildings_visible: str | None
-    pet_door_present: str | None
+    outbuildings_visible: bool | None
+    pet_door_present: bool | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
@@ -547,17 +548,17 @@ class BackHouseRecordResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class InsideHouseRecordCreate(BaseModel):
-    layout_exposure: Optional[str] = None
+    layout_exposure: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class InsideHouseRecordUpdate(BaseModel):
-    layout_exposure: Optional[str] = None
+    layout_exposure: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class InsideHouseRecordResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
-    layout_exposure: str | None
+    layout_exposure: bool | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
@@ -565,41 +566,41 @@ class InsideHouseRecordResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class GoogleStreetViewRecordCreate(BaseModel):
-    home_visible_from_street: Optional[str] = None
-    exterior_lighting: Optional[str] = None
-    surveillance_cameras: Optional[str] = None
-    motion_sensors_alarms: Optional[str] = None
-    ground_floor_windows_accessible: Optional[str] = None
-    bars_locks_reinforced_glass: Optional[str] = None
-    gate_fence: Optional[str] = None
+    home_visible_from_street: Optional[bool] = None
+    exterior_lighting: Optional[bool] = None
+    surveillance_cameras: Optional[bool] = None
+    motion_sensors_alarms: Optional[bool] = None
+    ground_floor_windows_accessible: Optional[bool] = None
+    bars_locks_reinforced_glass: Optional[bool] = None
+    gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
-    security_signage: Optional[str] = None
+    security_signage: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class GoogleStreetViewRecordUpdate(BaseModel):
-    home_visible_from_street: Optional[str] = None
-    exterior_lighting: Optional[str] = None
-    surveillance_cameras: Optional[str] = None
-    motion_sensors_alarms: Optional[str] = None
-    ground_floor_windows_accessible: Optional[str] = None
-    bars_locks_reinforced_glass: Optional[str] = None
-    gate_fence: Optional[str] = None
+    home_visible_from_street: Optional[bool] = None
+    exterior_lighting: Optional[bool] = None
+    surveillance_cameras: Optional[bool] = None
+    motion_sensors_alarms: Optional[bool] = None
+    ground_floor_windows_accessible: Optional[bool] = None
+    bars_locks_reinforced_glass: Optional[bool] = None
+    gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
-    security_signage: Optional[str] = None
+    security_signage: Optional[bool] = None
     images: Optional[List[str]] = None
 
 class GoogleStreetViewRecordResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
-    home_visible_from_street: str | None
-    exterior_lighting: str | None
-    surveillance_cameras: str | None
-    motion_sensors_alarms: str | None
-    ground_floor_windows_accessible: str | None
-    bars_locks_reinforced_glass: str | None
-    gate_fence: str | None
+    home_visible_from_street: bool | None
+    exterior_lighting: bool | None
+    surveillance_cameras: bool | None
+    motion_sensors_alarms: bool | None
+    ground_floor_windows_accessible: bool | None
+    bars_locks_reinforced_glass: bool | None
+    gate_fence: bool | None
     obstruction_of_view: str | None
-    security_signage: str | None
+    security_signage: bool | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
