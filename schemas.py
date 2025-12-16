@@ -139,6 +139,7 @@ class PhoneNumberResponse(BaseModel):
 
 class BulkPhoneUpload(BaseModel):
     phone_numbers_text: str
+    client_provided: Optional[str] = "No"
 
 # Relative/Associate Schemas
 class RelativeAssociateCreate(BaseModel):
