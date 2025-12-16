@@ -117,7 +117,7 @@ class EmailResponse(BaseModel):
 
 class BulkEmailUpload(BaseModel):
     emails_text: str
-
+    status: Optional[str] = "Client Provided"
 # Phone Number Schemas
 class PhoneNumberCreate(BaseModel):
     phone_number: str
