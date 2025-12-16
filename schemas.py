@@ -87,6 +87,8 @@ class ClientCreate(BaseModel):
     email: Optional[str] = None
     phone_number: Optional[str] = None
     employer: Optional[str] = None
+    darkside_module: Optional[bool] = False
+    snubase_module: Optional[bool] = False
 
 # Email Schemas
 class EmailCreate(BaseModel):
@@ -167,9 +169,6 @@ class UsernameCreate(BaseModel):
 
 class UsernameUpdate(BaseModel):
     username: Optional[str] = None
-    
-class BulkUsernameUpload(BaseModel):
-    usernames_text: str
 
 class UsernameResponse(BaseModel):
     id: uuid.UUID
@@ -179,6 +178,9 @@ class UsernameResponse(BaseModel):
     updated_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+class BulkUsernameUpload(BaseModel):
+    usernames_text: str
 
 # Address Schemas
 class AddressCreate(BaseModel):
@@ -392,8 +394,6 @@ class FacialRecognitionSiteResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
-
 # SERP Analysis Schemas
 class SerpAnalysisResponse(BaseModel):
     id: uuid.UUID
@@ -433,11 +433,7 @@ class OsintModuleResultResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
     module_name: str
-    status: str | None
-    reliable: bool
-    data: str | None
-    front_schema: str | None
-    spec_format: str | None
+    module_data: str | None
     query: str | None
     created_at: datetime
     updated_at: datetime
@@ -458,7 +454,6 @@ class ClientMatchingResultResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Property Assessment Schemas
 # Property Assessment Schemas
 class FrontHouseRecordCreate(BaseModel):
     home_visible_from_street: Optional[bool] = None
