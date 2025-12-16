@@ -242,7 +242,6 @@ class ClientFacialRecognitionSite(Base):
 
     client = relationship("Client", backref="facial_recognition_sites")
 
-
 class ClientLeakedDataset(Base):
     __tablename__ = "client_leaked_datasets"
 
@@ -263,14 +262,10 @@ class ClientOsintModuleResult(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.ID", ondelete="CASCADE"), nullable=False)
     module_name = Column(Text, nullable=False)
-    status = Column(Text, nullable=True)
-    reliable = Column(Boolean, nullable=False, default=False)
-    data = Column(Text, nullable=True)
-    front_schema = Column(Text, nullable=True)
-    spec_format = Column(Text, nullable=True)
+    module_data = Column(Text, nullable=True)
     query = Column(Text, nullable=True)
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=False), server_default=func.now())
+    updated_at = Column(DateTime(timezone=False), server_default=func.now(), onupdate=func.now())
 
     client = relationship("Client", backref="osint_module_results")
 
