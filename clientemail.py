@@ -191,40 +191,69 @@ def bulk_upload_emails(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Send raw email text directly to n8n webhook and handle success/error feedback"""
-    
-    # Check client access
+
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    
+
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    
+
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/54db872b-e2e7-4b81-9d94-01ca7e62428c"
-    
+
     payload = {
         "emails": bulk_data.emails_text,
-        "client_id": str(client_id)
-    }   
+        "client_id": str(client_id),
+        "status": bulk_data.status
+    }
+
     try:
         response = requests.post(webhook_url, json=payload, timeout=30)
+
         try:
             n8n_result = response.json()
-        except:
-            n8n_result = None
-        if response.status_code == 200 and n8n_result and n8n_result.get("success") == True:
-            return {
-                "message": n8n_result.get("message", "Emails processed successfully"),
-                "count": n8n_result.get("count", 0),
-                "status": "success"
-            }
-        else:
+        except ValueError:
+            raise HTTPException(
+                status_code=500,
+                detail="Webhook did not return valid JSON"
+            )
+
+        if response.status_code != 200:
             raise HTTPException(
                 status_code=500,
                 detail=n8n_result.get("message", "Webhook failed")
-                if n8n_result else "Webhook did not return JSON"
             )
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Webhook error: {str(e)}")
+
+        success = n8n_result.get("success")
+        print(success)
+
+        if success is True:
+            return {
+                "status": "success",
+                "message": n8n_result.get(
+                    "message",
+                    "Emails inserted successfully"
+                ),
+                "count": n8n_result.get("count", 0)
+            }
+
+        if success is False:
+            return {
+                "status": "info",
+                "message": n8n_result.get(
+                    "message",
+                    "Emails already exist"
+                ),
+                "count": 0
+            }
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unexpected webhook response"
+        )
+
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Webhook connection error: {str(e)}"
+        )
