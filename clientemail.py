@@ -242,7 +242,7 @@ def bulk_upload_emails(
                 "status": "info",
                 "message": n8n_result.get(
                     "message",
-                    "Email already exists"
+                    "Emails already exist"
                 ),
                 "count": 0
             }
