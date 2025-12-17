@@ -128,7 +128,7 @@ class ClientSocialAccount(Base):
     what_is_exposed = Column(ARRAY(Text), nullable=True)
     engagement_level = Column(String, nullable=True)
     confidence_level = Column(String, nullable=True)
-    image_url = Column(Text, nullable=True)
+    images = Column(ARRAY(Text), default=list, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
