@@ -221,41 +221,19 @@ def bulk_upload_phone_numbers(
     try:
         response = requests.post(webhook_url, json=payload, timeout=60)
 
-        try:
-            n8n_result = response.json()
-        except ValueError:
-            raise HTTPException(
-                status_code=500,
-                detail="Webhook did not return valid JSON"
-            )
+        # response from n8n (JSON only because responseMode="responseNode")
+        n8n_result = response.json()
 
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=500,
-                detail=n8n_result.get("message", "Webhook failed")
-            )
-
-        success = n8n_result.get("success")
-
-        if success is True:
+        if n8n_result.get("success") is True:
             return {
                 "status": "success",
                 "message": n8n_result.get("message", "Phone numbers added successfully")
             }
-
-        if success is False:
+        else:
             raise HTTPException(
                 status_code=400,
-                detail=n8n_result.get("message", "Phone number already exists")
+                detail=n8n_result.get("message", "Failed to insert phone numbers")
             )
 
-        raise HTTPException(
-            status_code=500,
-            detail="Unexpected webhook response"
-        )
-
-    except requests.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Webhook connection error: {str(e)}"
-        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
