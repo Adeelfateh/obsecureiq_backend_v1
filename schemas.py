@@ -238,7 +238,7 @@ class SocialAccountResponse(BaseModel):
     what_is_exposed: List[str] | None
     engagement_level: str | None
     confidence_level: str | None
-    image_url: str | None
+    images: List[str] | None
     created_at: datetime
     updated_at: datetime
     
