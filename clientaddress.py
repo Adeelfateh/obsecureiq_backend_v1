@@ -171,7 +171,8 @@ def bulk_upload_addresses(
     
     payload = {
         "addresses": bulk_data.addresses_text,
-        "client_id": str(client_id)
+        "client_id": str(client_id),
+        "client_provided": bulk_data.client_provided
     }
     
     try:
