@@ -224,7 +224,7 @@ class ClientBrokerScreenRecord(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.ID", ondelete="CASCADE"), nullable=False)
     broker_name = Column(String, nullable=False)
-    image_url = Column(Text, nullable=False)
+    images = Column(ARRAY(Text), default=list, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
