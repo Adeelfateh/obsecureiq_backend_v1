@@ -30,3 +30,33 @@ def get_client_matching_results(
     ).order_by(ClientMatchingResult.created_at.desc()).all()
     
     return matching_results
+
+
+@router.delete("/clients/{client_id}/matching-results/{result_id}", tags=["Client Matching Results"])
+def delete_client_matching_result(
+    client_id: uuid.UUID,
+    result_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a matching result"""
+    
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    if current_user.role == "Analyst" and client.analyst_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    matching_result = db.query(ClientMatchingResult).filter(
+        ClientMatchingResult.id == result_id,
+        ClientMatchingResult.client_id == client_id
+    ).first()
+    
+    if not matching_result:
+        raise HTTPException(status_code=404, detail="Matching result not found")
+    
+    db.delete(matching_result)
+    db.commit()
+    
+    return {"message": "Matching result deleted successfully"}
