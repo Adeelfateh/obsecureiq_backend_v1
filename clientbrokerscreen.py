@@ -38,14 +38,14 @@ def get_broker_screen_records(
     ).order_by(ClientBrokerScreenRecord.created_at.desc()).all()
 
 @router.post("/clients/{client_id}/broker-screen-records", tags=["Broker Screen Records"])
-def create_broker_screen_records(
+def create_broker_screen_record(
     client_id: uuid.UUID,
     broker_name: str = Form(...),
     images: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create broker screen records with images"""
+    """Create a broker screen record with multiple images"""
     if not broker_name.strip():
         raise HTTPException(status_code=400, detail="Broker name is required")
 
@@ -59,7 +59,7 @@ def create_broker_screen_records(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    uploaded = []
+    image_urls = []
 
     for image in images:
         ext = Path(image.filename).suffix or ".jpg"
@@ -71,35 +71,39 @@ def create_broker_screen_records(
 
         # Create complete image URL for database
         url = f"{BASE_URL}/uploads/client_images/{filename}"
+        image_urls.append(url)
 
-        record = ClientBrokerScreenRecord(
-            client_id=client_id,
-            broker_name=broker_name.strip(),
-            image_url=url
-        )
+    # Create a single record with multiple images
+    record = ClientBrokerScreenRecord(
+        client_id=client_id,
+        broker_name=broker_name.strip(),
+        images=image_urls
+    )
 
-        db.add(record)
-        db.flush()
-        uploaded.append({
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "message": f"Broker record created with {len(image_urls)} image(s)",
+        "record": {
             "id": str(record.id),
             "broker_name": record.broker_name,
-            "image_url": url,
+            "images": record.images,
             "created_at": record.created_at.isoformat()
-        })
-
-    db.commit()
-
-    return {"message": f"{len(uploaded)} image(s) uploaded", "records": uploaded}
+        }
+    }
 
 @router.put("/clients/{client_id}/broker-screen-records/{record_id}", response_model=BrokerScreenRecordResponse, tags=["Broker Screen Records"])
 def update_broker_screen_record(
     client_id: uuid.UUID,
     record_id: uuid.UUID,
-    broker_data: BrokerScreenRecordUpdate,
+    data: str = Form(...),
+    images: List[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Edit a broker screen record"""
+    """Update a broker screen record"""
     
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -116,12 +120,49 @@ def update_broker_screen_record(
     if not record:
         raise HTTPException(status_code=404, detail="Broker screen record not found")
     
-    update_data = broker_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        if field == 'broker_name' and (not value or not value.strip()):
-            raise HTTPException(status_code=400, detail="Broker name cannot be empty")
-        setattr(record, field, value.strip() if isinstance(value, str) else value)
+    try:
+        import json
+        record_data = json.loads(data)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON data")
     
+    # Update broker name
+    broker_name = record_data.get('broker_name')
+    if not broker_name or not broker_name.strip():
+        raise HTTPException(status_code=400, detail="Broker name cannot be empty")
+    record.broker_name = broker_name.strip()
+    
+    # Handle images
+    remaining_images = record_data.get('remaining_images', [])
+    
+    # Delete removed images from filesystem
+    if record.images:
+        for old_image_url in record.images:
+            if old_image_url not in remaining_images:
+                try:
+                    old_path = UPLOAD_DIR / Path(old_image_url).name
+                    if old_path.exists():
+                        old_path.unlink()
+                except Exception as e:
+                    print(f"Warning: Could not delete old image: {str(e)}")
+    
+    # Start with remaining images
+    final_images = remaining_images.copy()
+    
+    # Add new uploaded images
+    if images:
+        for image in images:
+            ext = Path(image.filename).suffix or ".jpg"
+            filename = f"{uuid.uuid4()}{ext}"
+            path = UPLOAD_DIR / filename
+
+            with path.open("wb") as f:
+                shutil.copyfileobj(image.file, f)
+
+            url = f"{BASE_URL}/uploads/client_images/{filename}"
+            final_images.append(url)
+    
+    record.images = final_images
     record.updated_at = datetime.now(timezone.utc)
     
     db.commit()
@@ -148,12 +189,15 @@ def delete_broker_screen_record(
     if current_user.role == "Analyst" and record.client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    try:
-        old_path = UPLOAD_DIR / Path(record.image_url).name
-        if old_path.exists():
-            old_path.unlink()
-    except Exception as e:
-        print(f"Warning: Could not delete image: {str(e)}")
+    # Delete all images from filesystem
+    if record.images:
+        for image_url in record.images:
+            try:
+                old_path = UPLOAD_DIR / Path(image_url).name
+                if old_path.exists():
+                    old_path.unlink()
+            except Exception as e:
+                print(f"Warning: Could not delete image: {str(e)}")
 
     db.delete(record)
     db.commit()
