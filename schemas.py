@@ -214,6 +214,7 @@ class AddressResponse(BaseModel):
 
 class BulkAddressUpload(BaseModel):
     addresses_text: str
+    client_provided: Optional[str] = "Yes"
 
 # Social Account Schemas
 class SocialAccountCreate(BaseModel):
