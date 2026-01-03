@@ -19,7 +19,7 @@ from schemas import (
     GovRecordCreate, GovRecordUpdate, GovRecordResponse
 )
 from users import get_current_user
-BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
+BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
 
 router = APIRouter()
 
