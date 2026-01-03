@@ -8,7 +8,7 @@ import shutil
 import json
 
 # Hardcoded BASE_URL
-BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
+BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
 
 from database import get_db
 from models import (
