@@ -19,7 +19,7 @@ router = APIRouter()
 UPLOAD_DIR = Path("uploads/client_images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
+BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
 
 @router.get("/clients/{client_id}/social-accounts", response_model=List[SocialAccountResponse], tags=["Client Social Media"])
 def get_client_social_accounts(
