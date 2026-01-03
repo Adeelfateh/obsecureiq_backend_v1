@@ -13,7 +13,7 @@ from schemas import BrokerScreenRecordResponse, BrokerScreenRecordUpdate
 from users import get_current_user
 
 router = APIRouter()
-BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
+BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
 
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
