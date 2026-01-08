@@ -174,95 +174,103 @@ def bulk_upload_relatives(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Send raw relatives/associates text directly to n8n webhook and return actual result"""
-    
-    # Validate client
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    
+
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    
-    # Validate relationship_type
-    if bulk_data.relationship_type and bulk_data.relationship_type not in ["Relative", "Associate"]:
+
+    relationship_type = bulk_data.relationship_type or "Associate"
+    if relationship_type not in ["Relative", "Associate"]:
         raise HTTPException(
             status_code=400,
             detail="relationship_type must be 'Relative' or 'Associate'"
         )
-    
-    # n8n Webhook URL
+
     webhook_url = "https://obscureiq.app.n8n.cloud/webhook/a68f0e08-aa20-470d-b0e5-fbda8968d7e2"
-    
+
     payload = {
         "relative_name": bulk_data.relatives_text,
-        "relationship_type": bulk_data.relationship_type or "Associate",
+        "relationship_type": relationship_type,
         "client_id": str(client_id)
     }
-    
+
     try:
         response = requests.post(webhook_url, json=payload, timeout=60)
 
-        # Check if response is JSON
         try:
             n8n_result = response.json()
-        except:
+        except ValueError:
             raise HTTPException(
                 status_code=500,
-                detail=f"Webhook returned non-JSON response: {response.text[:200]}"
+                detail="Webhook did not return valid JSON"
             )
 
-        # Check for n8n webhook registration error - if webhook not active, insert directly
+        # 🔁 FALLBACK: webhook inactive
         if "detail" in n8n_result and "not registered" in str(n8n_result.get("detail", "")):
-            # Fallback: Insert directly without webhook
-            names_list = bulk_data.relatives_text.strip().split('\n')
-            added_count = 0
-            relationship_type = bulk_data.relationship_type or "Associate"
-            
-            for name_line in names_list:
-                name = name_line.strip()
-                if name:
-                    # Normalize and check duplicate (case-insensitive)
-                    normalized_name = name.strip()
-                    existing = db.query(ClientRelativeAssociate).filter(
-                        ClientRelativeAssociate.client_id == client_id
-                    ).all()
-                    
-                    is_duplicate = False
-                    for record in existing:
-                        if record.name.strip().lower() == normalized_name.lower():
-                            is_duplicate = True
-                            break
-                    
-                    if not is_duplicate:
-                        new_relative = ClientRelativeAssociate(
-                            client_id=client_id,
-                            name=normalized_name,
-                            relationship_type=relationship_type
-                        )
-                        db.add(new_relative)
-                        added_count += 1
-            
+            names = [
+                n.strip()
+                for n in bulk_data.relatives_text.split("\n")
+                if n.strip()
+            ]
+
+            existing_records = db.query(ClientRelativeAssociate).filter(
+                ClientRelativeAssociate.client_id == client_id
+            ).all()
+
+            existing_names = {
+                r.name.strip().lower() for r in existing_records
+            }
+
+            added_any = False
+
+            for name in names:
+                if name.lower() in existing_names:
+                    continue
+
+                db.add(ClientRelativeAssociate(
+                    client_id=client_id,
+                    name=name,
+                    relationship_type=relationship_type
+                ))
+                added_any = True
+
             db.commit()
+
+            if not added_any:
+                return {
+                    "success": False,
+                    "message": "Relatives already exist"
+                }
+
             return {
-                "status": "success",
-                "message": f"{added_count} relative(s) added successfully (webhook inactive, used direct insert)"
+                "success": True,
+                "message": "Relatives added successfully"
             }
 
-        # n8n SUCCESS
-        if n8n_result.get("status") == "Success" or n8n_result.get("success") is True:
+        # ✅ NORMAL n8n RESPONSE
+        success = n8n_result.get("success")
+
+        if success is True:
             return {
-                "status": "success",
-                "message": n8n_result.get("message", "Relative added successfully")
+                "success": True,
+                "message": n8n_result.get("message", "Relatives added successfully")
             }
 
-        # n8n ERROR
+        if success is False:
+            return {
+                "success": False,
+                "message": n8n_result.get("message", "Relatives already exist")
+            }
+
         raise HTTPException(
-            status_code=400,
-            detail=n8n_result.get("message", "Failed to insert relatives")
+            status_code=500,
+            detail="Unexpected webhook response"
         )
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Webhook error: {str(e)}")
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Webhook connection error: {str(e)}"
+        )
