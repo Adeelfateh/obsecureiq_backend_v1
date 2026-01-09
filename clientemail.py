@@ -6,11 +6,26 @@ import uuid
 import requests
 
 from database import get_db
-from models import Client, ClientEmail, User
+from models import Client, ClientEmail, ClientPhoneNumber, User
 from schemas import EmailCreate, EmailUpdate, EmailResponse, BulkEmailUpload
 from users import get_current_user
 
 router = APIRouter()
+
+def validate_email_tag_automation(client_id: uuid.UUID, email_tag: bool, db: Session) -> None:
+    """Validate email tag automation requirement"""
+    if email_tag:
+        # Check if client has at least one phone number with client_provided = "Yes"
+        phone_with_client_provided = db.query(ClientPhoneNumber).filter(
+            ClientPhoneNumber.client_id == client_id,
+            ClientPhoneNumber.client_provided == "Yes"
+        ).first()
+        
+        if not phone_with_client_provided:
+            raise HTTPException(
+                status_code=400, 
+                detail="Add at least one client provided phone number"
+            )
 
 @router.get("/clients/{client_id}/emails", response_model=List[EmailResponse], tags=["Client Emails"])
 def get_client_emails(
@@ -57,6 +72,9 @@ def add_client_email(
     
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
+    
+    # Validate email tag automation requirement
+    validate_email_tag_automation(client_id, email_data.email_tag, db)
     
     # Create new email
     new_email = ClientEmail(
@@ -125,6 +143,10 @@ def edit_client_email(
         
         if existing:
             raise HTTPException(status_code=400, detail="Email already exists")
+    
+    # Validate email tag automation requirement if being updated
+    if email_data.email_tag is not None:
+        validate_email_tag_automation(client_id, email_data.email_tag, db)
     
     # Update only the fields that are provided
     update_data = email_data.model_dump(exclude_unset=True)
