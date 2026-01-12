@@ -13,7 +13,7 @@ from schemas import ClientResponse, AssignClientRequest, ClientCreate
 from users import get_admin_user, get_analyst_user, get_current_user
 
 router = APIRouter()
-BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
+BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
