@@ -88,6 +88,7 @@ def upload_client_residential_heatmap_images(
             )
         
         # Create complete image URL for database
+      
         image_url = f"{BASE_URL}/uploads/client_images/{unique_filename}"
         
         # Create database record for each image
