@@ -391,7 +391,7 @@ class FacialRecognitionSiteResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
     site_name: str
-    image_url: str
+    images: List[str] | None
     created_at: datetime
     updated_at: datetime
 
