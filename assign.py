@@ -13,11 +13,10 @@ from schemas import ClientResponse, AssignClientRequest, ClientCreate
 from users import get_admin_user, get_analyst_user, get_current_user
 
 router = APIRouter()
-
+BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-BASE_URL = "https://obsecureiqbackendv1-production.up.railway.app"
 
 @router.post("/clients", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 def create_client(
@@ -52,9 +51,8 @@ def create_client(
     
     # Parse date_of_birth if provided
     parsed_date = None
-    if date_of_birth:
+    if date_of_birth and date_of_birth.strip():  # Only process if not empty
         try:
-            from datetime import datetime
             parsed_date = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
@@ -150,13 +148,43 @@ def update_client(
     employer: Optional[str] = Form(None),
     darkside_module: Optional[bool] = Form(None),
     snubase_module: Optional[bool] = Form(None),
-    admin_user: User = Depends(get_admin_user),
+    profile_photo: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Update client (Admin only)"""
+    """Update client (Admin or assigned Analyst)"""
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+    
+    # Check permissions: Admin can edit any client, Analyst can only edit assigned clients
+    if current_user.role == "Analyst" and client.analyst_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only edit clients assigned to you.")
+    
+    # Handle profile photo upload
+    if profile_photo:
+        # Delete old photo if exists
+        if client.profile_photo_url:
+            try:
+                # Extract filename from URL
+                old_filename = client.profile_photo_url.split('/')[-1]
+                old_file_path = UPLOAD_DIR / old_filename
+                if old_file_path.exists():
+                    old_file_path.unlink()
+                    print(f"Deleted old profile photo: {old_filename}")
+            except Exception as e:
+                print(f"Warning: Could not delete old profile photo: {str(e)}")
+        
+        # Save new photo
+        ext = Path(profile_photo.filename).suffix or ".jpg"
+        filename = f"{uuid.uuid4()}{ext}"
+        path = UPLOAD_DIR / filename
+        
+        with path.open("wb") as f:
+            shutil.copyfileobj(profile_photo.file, f)
+        
+        # Create complete image URL
+        client.profile_photo_url = f"{BASE_URL}/uploads/client_images/{filename}"
     
     # Update only provided fields
     if full_name is not None:
@@ -164,10 +192,13 @@ def update_client(
     if other_names is not None:
         client.other_names = other_names
     if date_of_birth is not None:
-        try:
-            client.date_of_birth = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        if date_of_birth.strip():  # Only process if not empty
+            try:
+                client.date_of_birth = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        else:
+            client.date_of_birth = None  # Set to None if empty string
     if sex is not None:
         client.sex = sex
     if organization is not None:
