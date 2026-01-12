@@ -6,9 +6,7 @@ from pathlib import Path
 import uuid
 import shutil
 import requests
-
-# Hardcoded BASE_URL
-BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
+import os
 
 from database import get_db
 from models import Client, ClientFacialRecognitionURL, ClientFacialRecognitionSite, User
@@ -19,6 +17,8 @@ from schemas import (
 from users import get_current_user
 
 router = APIRouter()
+BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
+
 
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
@@ -213,7 +213,7 @@ def create_facial_recognition_sites(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create facial recognition sites with images"""
+    """Create facial recognition sites with multiple images in one record"""
     if not site_name.strip():
         raise HTTPException(status_code=400, detail="Site name is required")
 
@@ -227,7 +227,7 @@ def create_facial_recognition_sites(
     if current_user.role == "Analyst" and client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    uploaded = []
+    image_urls = []
 
     for image in images:
         ext = Path(image.filename).suffix or ".jpg"
@@ -238,79 +238,104 @@ def create_facial_recognition_sites(
             shutil.copyfileobj(image.file, f)
 
         url = f"{BASE_URL}/uploads/client_images/{filename}"
+        image_urls.append(url)
 
-        record = ClientFacialRecognitionSite(
-            client_id=client_id,
-            site_name=site_name.strip(),
-            image_url=url
-        )
+    # Create a single record with multiple images
+    record = ClientFacialRecognitionSite(
+        client_id=client_id,
+        site_name=site_name.strip(),
+        images=image_urls  # Store array of images
+    )
 
-        db.add(record)
-        db.flush()
-        uploaded.append({
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "message": f"Facial recognition site created with {len(image_urls)} image(s)",
+        "record": {
             "id": str(record.id),
             "site_name": record.site_name,
-            "image_url": url,
+            "images": record.images,
             "created_at": record.created_at.isoformat()
-        })
-
-    db.commit()
-
-    return {"message": f"{len(uploaded)} image(s) uploaded", "records": uploaded}
+        }
+    }
 
 @router.put("/clients/{client_id}/facial-recognition-sites/{record_id}", tags=["Facial Recognition - Sites"])
 def update_facial_recognition_site(
     client_id: uuid.UUID,
     record_id: uuid.UUID,
-    site_name: str = Form(...),
-    image: UploadFile = File(...),
+    data: str = Form(...),
+    images: List[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Update a facial recognition site"""
+    """Update a facial recognition site with multiple images"""
+    
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    if current_user.role == "Analyst" and client.analyst_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     record = db.query(ClientFacialRecognitionSite).filter(
         ClientFacialRecognitionSite.id == record_id,
         ClientFacialRecognitionSite.client_id == client_id
     ).first()
-
+    
     if not record:
-        raise HTTPException(status_code=404, detail="Record not found")
-
-    if current_user.role == "Analyst" and record.client.analyst_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    # Validate input
-    if not site_name.strip():
-        raise HTTPException(status_code=400, detail="Site name is required")
-
-    ext = Path(image.filename).suffix or ".jpg"
-    filename = f"{uuid.uuid4()}{ext}"
-    filepath = UPLOAD_DIR / filename
-
-    with filepath.open("wb") as f:
-        shutil.copyfileobj(image.file, f)
-
-    # Delete old file
+        raise HTTPException(status_code=404, detail="Facial recognition site not found")
+    
     try:
-        old_path = UPLOAD_DIR / Path(record.image_url).name
-        if old_path.exists():
-            old_path.unlink()
-    except Exception as e:
-        print(f"Warning: {e}")
-
+        import json
+        record_data = json.loads(data)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON data")
+    
+    # Update site name
+    site_name = record_data.get('site_name')
+    if not site_name or not site_name.strip():
+        raise HTTPException(status_code=400, detail="Site name cannot be empty")
     record.site_name = site_name.strip()
-    record.image_url = f"{BASE_URL}/uploads/client_images/{filename}"
-    record.updated_at = datetime.now(timezone.utc)
+    
+    # Handle images
+    remaining_images = record_data.get('remaining_images', [])
+    
+    # Delete removed images from filesystem
+    if record.images:
+        for old_image_url in record.images:
+            if old_image_url not in remaining_images:
+                try:
+                    old_path = UPLOAD_DIR / Path(old_image_url).name
+                    if old_path.exists():
+                        old_path.unlink()
+                except Exception as e:
+                    print(f"Warning: Could not delete old image: {str(e)}")
+    
+    # Start with remaining images
+    final_images = remaining_images.copy()
+    
+    # Add new uploaded images
+    if images:
+        for image in images:
+            ext = Path(image.filename).suffix or ".jpg"
+            filename = f"{uuid.uuid4()}{ext}"
+            path = UPLOAD_DIR / filename
 
+            with path.open("wb") as f:
+                shutil.copyfileobj(image.file, f)
+
+            url = f"{BASE_URL}/uploads/client_images/{filename}"
+            final_images.append(url)
+    
+    record.images = final_images
+    record.updated_at = datetime.now(timezone.utc)
+    
     db.commit()
     db.refresh(record)
-
-    return {"message": "Record updated", "record": {
-        "id": str(record.id),
-        "site_name": record.site_name,
-        "image_url": record.image_url,
-        "updated_at": record.updated_at.isoformat()
-    }}
+    
+    return record
 
 @router.delete("/clients/{client_id}/facial-recognition-sites/{record_id}", tags=["Facial Recognition - Sites"])
 def delete_facial_recognition_site(
@@ -331,12 +356,15 @@ def delete_facial_recognition_site(
     if current_user.role == "Analyst" and record.client.analyst_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    try:
-        old_path = UPLOAD_DIR / Path(record.image_url).name
-        if old_path.exists():
-            old_path.unlink()
-    except Exception as e:
-        print(f"Warning: Could not delete image: {str(e)}")
+    # Delete all images from filesystem
+    if record.images:
+        for image_url in record.images:
+            try:
+                old_path = UPLOAD_DIR / Path(image_url).name
+                if old_path.exists():
+                    old_path.unlink()
+            except Exception as e:
+                print(f"Warning: Could not delete image: {str(e)}")
 
     db.delete(record)
     db.commit()
