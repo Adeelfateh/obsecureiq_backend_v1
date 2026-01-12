@@ -49,13 +49,12 @@ class ChangePassword(BaseModel):
     old_password: str
     new_password: str
 
-# Client Schemas
 class ClientResponse(BaseModel):
     id: uuid.UUID = Field(..., alias="ID")
     full_name: str | None = None
     other_names: str | None = None
     date_of_birth: datetime | None = None
-    profile_photo: str | None = None
+    profile_photo_url: str | None = None
     sex: str | None = None
     organization: str | None = None
     status: str | None = None
@@ -74,6 +73,7 @@ class ClientResponse(BaseModel):
         from_attributes=True,
         populate_by_name=True
     )
+
 
 class AssignClientRequest(BaseModel):
     analyst_email: EmailStr
