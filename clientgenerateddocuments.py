@@ -47,12 +47,14 @@ def get_client_generated_documents(
                 "file_name": doc.file_name,
                 "view_url": doc.view_url,
                 "download_url": doc.download_url,
+                "status": doc.status,
                 "created_at": doc.created_at.isoformat(),
                 "updated_at": doc.updated_at.isoformat()
             }
             for doc in documents
         ]
     }
+
 @router.delete("/clients/{client_id}/documents/{document_id}", tags=["Generated Documents"])
 def delete_generated_document(
     client_id: uuid.UUID,
@@ -73,7 +75,7 @@ def delete_generated_document(
         raise HTTPException(status_code=404, detail="Document not found")
     
     # Send to webhook to delete from Google Drive
-    webhook_url = "https://obscureiq.app.n8n.cloud/webhook-test/a8e03ae5-3830-4f54-a921-e9d61f18a8eb"
+    webhook_url = "https://obscureiq.app.n8n.cloud/webhook/a8e03ae5-3830-4f54-a921-e9d61f18a8eb"
     
     payload = {
         "document_id": str(document_id),
@@ -139,6 +141,7 @@ def get_all_generated_documents(
                 "file_name": doc.file_name,
                 "view_url": doc.view_url,
                 "download_url": doc.download_url,
+                "status": doc.status,
                 "created_at": doc.created_at.isoformat(),
                 "updated_at": doc.updated_at.isoformat(),
                 "client": {
@@ -151,3 +154,67 @@ def get_all_generated_documents(
             for doc in documents
         ]
     }
+
+@router.delete("/admin/documents/{document_id}", tags=["Generated Documents"])
+def admin_delete_generated_document(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Admin delete a generated document from database and Google Drive"""
+    if current_user.role != "Admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Find the document
+    document = db.query(ClientGeneratedDocument).filter(
+        ClientGeneratedDocument.id == document_id
+    ).first()
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Send to webhook to delete from Google Drive
+    webhook_url = "https://obscureiq.app.n8n.cloud/webhook-test/a8e03ae5-3830-4f54-a921-e9d61f18a8eb"
+    
+    payload = {
+        "document_id": str(document_id),
+        "view_url": document.view_url,
+        "file_name": document.file_name
+    }
+    
+    try:
+        # Send to webhook first
+        response = requests.post(webhook_url, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            webhook_data = response.json()
+            if webhook_data.get("status") == "Success":
+                # Only delete from database if webhook succeeded
+                db.delete(document)
+                db.commit()
+                
+                return {
+                    "message": "Document deleted successfully",
+                    "document_id": str(document_id)
+                }
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to delete from Google Drive: {webhook_data.get('message', 'Unknown error')}"
+                )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Webhook failed with status {response.status_code}"
+            )
+        
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to connect to Google Drive: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error deleting document: {str(e)}"
+        )
