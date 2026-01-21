@@ -49,6 +49,7 @@ class ChangePassword(BaseModel):
     old_password: str
     new_password: str
 
+# Client Schemas
 class ClientResponse(BaseModel):
     id: uuid.UUID = Field(..., alias="ID")
     full_name: str | None = None
@@ -73,7 +74,6 @@ class ClientResponse(BaseModel):
         from_attributes=True,
         populate_by_name=True
     )
-
 
 class AssignClientRequest(BaseModel):
     analyst_email: EmailStr
@@ -468,6 +468,7 @@ class FrontHouseRecordCreate(BaseModel):
     gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
     security_signage: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class FrontHouseRecordUpdate(BaseModel):
@@ -480,6 +481,7 @@ class FrontHouseRecordUpdate(BaseModel):
     gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
     security_signage: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class FrontHouseRecordResponse(BaseModel):
@@ -494,6 +496,7 @@ class FrontHouseRecordResponse(BaseModel):
     gate_fence: bool | None
     obstruction_of_view: str | None
     security_signage: bool | None
+    real_estate_websites: List[str] | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
@@ -511,6 +514,7 @@ class BackHouseRecordCreate(BaseModel):
     landscaping_concealment: Optional[str] = None
     outbuildings_visible: Optional[bool] = None
     pet_door_present: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class BackHouseRecordUpdate(BaseModel):
@@ -524,6 +528,7 @@ class BackHouseRecordUpdate(BaseModel):
     landscaping_concealment: Optional[str] = None
     outbuildings_visible: Optional[bool] = None
     pet_door_present: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class BackHouseRecordResponse(BaseModel):
@@ -539,6 +544,7 @@ class BackHouseRecordResponse(BaseModel):
     landscaping_concealment: str | None
     outbuildings_visible: bool | None
     pet_door_present: bool | None
+    real_estate_websites: List[str] | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
@@ -547,16 +553,19 @@ class BackHouseRecordResponse(BaseModel):
 
 class InsideHouseRecordCreate(BaseModel):
     layout_exposure: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class InsideHouseRecordUpdate(BaseModel):
     layout_exposure: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class InsideHouseRecordResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
     layout_exposure: bool | None
+    real_estate_websites: List[str] | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
@@ -573,6 +582,7 @@ class GoogleStreetViewRecordCreate(BaseModel):
     gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
     security_signage: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class GoogleStreetViewRecordUpdate(BaseModel):
@@ -585,6 +595,7 @@ class GoogleStreetViewRecordUpdate(BaseModel):
     gate_fence: Optional[bool] = None
     obstruction_of_view: Optional[str] = None
     security_signage: Optional[bool] = None
+    real_estate_websites: Optional[List[str]] = None
     images: Optional[List[str]] = None
 
 class GoogleStreetViewRecordResponse(BaseModel):
@@ -599,6 +610,7 @@ class GoogleStreetViewRecordResponse(BaseModel):
     gate_fence: bool | None
     obstruction_of_view: str | None
     security_signage: bool | None
+    real_estate_websites: List[str] | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
