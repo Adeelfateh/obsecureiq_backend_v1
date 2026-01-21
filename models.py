@@ -327,6 +327,7 @@ class ClientFrontHouseRecord(Base):
     gate_fence = Column(Boolean, default=False, nullable=True)
     obstruction_of_view = Column(String, nullable=True)
     security_signage = Column(Boolean, default=False, nullable=True)
+    real_estate_websites = Column(ARRAY(Text), default=list, nullable=True)
     images = Column(ARRAY(Text), default=list, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -348,6 +349,7 @@ class ClientBackHouseRecord(Base):
     landscaping_concealment = Column(String, nullable=True)
     outbuildings_visible = Column(Boolean, default=False, nullable=True)
     pet_door_present = Column(Boolean, default=False, nullable=True)
+    real_estate_websites = Column(ARRAY(Text), default=list, nullable=True)
     images = Column(ARRAY(Text), default=list, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -360,6 +362,7 @@ class ClientInsideHouseRecord(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.ID", ondelete="CASCADE"), nullable=False)
     layout_exposure = Column(Boolean, default=False, nullable=True)
+    real_estate_websites = Column(ARRAY(Text), default=list, nullable=True)
     images = Column(ARRAY(Text), default=list, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -380,6 +383,7 @@ class ClientGoogleStreetViewRecord(Base):
     gate_fence = Column(Boolean, default=False, nullable=True)
     obstruction_of_view = Column(String, nullable=True)
     security_signage = Column(Boolean, default=False, nullable=True)
+    real_estate_websites = Column(ARRAY(Text), default=list, nullable=True)
     images = Column(ARRAY(Text), default=list, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -395,6 +399,7 @@ class ClientGeneratedDocument(Base):
     file_name = Column(Text, nullable=False)
     view_url = Column(Text, nullable=False)          # View in browser
     download_url = Column(Text, nullable=False)      # Direct download
+    status = Column(String, default="progress", nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
