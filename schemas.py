@@ -221,25 +221,31 @@ class BulkAddressUpload(BaseModel):
 class SocialAccountCreate(BaseModel):
     platform: str
     profile_url: str
+    privacy: Optional[str] = None
     what_is_exposed: Optional[List[str]] = None
     engagement_level: Optional[str] = None
     confidence_level: Optional[str] = None
+    analyst_notes: Optional[str] = None
 
 class SocialAccountUpdate(BaseModel):
     platform: Optional[str] = None
     profile_url: Optional[str] = None
+    privacy: Optional[str] = None
     what_is_exposed: Optional[List[str]] = None
     engagement_level: Optional[str] = None
     confidence_level: Optional[str] = None
+    analyst_notes: Optional[str] = None
 
 class SocialAccountResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
     platform: str
     profile_url: str
+    privacy: str | None
     what_is_exposed: List[str] | None
     engagement_level: str | None
     confidence_level: str | None
+    analyst_notes: str | None
     images: List[str] | None
     created_at: datetime
     updated_at: datetime
