@@ -18,7 +18,6 @@ router = APIRouter()
 # Upload directory setup
 UPLOAD_DIR = Path("uploads/client_images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
 BASE_URL = "https://obsecureiqbackendv1-production-e750.up.railway.app"
 
 @router.get("/clients/{client_id}/social-accounts", response_model=List[SocialAccountResponse], tags=["Client Social Media"])
@@ -91,7 +90,7 @@ def add_client_social_account(
             
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
-
+            
             image_url = f"{BASE_URL}/uploads/client_images/{filename}"
             image_urls.append(image_url)
     
@@ -105,9 +104,11 @@ def add_client_social_account(
         client_id=client_id,
         platform=record_data.get('platform').strip(),
         profile_url=record_data.get('profile_url').strip(),
+        privacy=record_data.get('privacy'),
         what_is_exposed=exposed_list,
         engagement_level=record_data.get('engagement_level'),
         confidence_level=record_data.get('confidence_level'),
+        analyst_notes=record_data.get('analyst_notes'),
         images=image_urls  # Store multiple images
     )
     
@@ -168,8 +169,12 @@ def edit_client_social_account(
                             detail="This profile URL already exists"
                         )
                 social_record.profile_url = value.strip() if value else None
+            elif field == 'privacy':
+                social_record.privacy = value
             elif field == 'what_is_exposed':
                 social_record.what_is_exposed = [item.strip() for item in value.split(',') if item.strip()] if value else []
+            elif field == 'analyst_notes':
+                social_record.analyst_notes = value
             elif field == 'engagement_level':
                 social_record.engagement_level = value
             elif field == 'confidence_level':
@@ -212,7 +217,6 @@ def edit_client_social_account(
             with filepath.open("wb") as f:
                 shutil.copyfileobj(image.file, f)
             
-            
             image_url = f"{BASE_URL}/uploads/client_images/{filename}"
             new_image_urls.append(image_url)
     
@@ -237,12 +241,16 @@ def edit_client_social_account(
                     detail="This profile URL already exists"
                 )
         social_record.profile_url = update_data['profile_url'].strip() if update_data['profile_url'] else None
+    if 'privacy' in update_data:
+        social_record.privacy = update_data['privacy']
     if 'what_is_exposed' in update_data:
         social_record.what_is_exposed = [item.strip() for item in update_data['what_is_exposed'].split(',') if item.strip()] if update_data['what_is_exposed'] else []
     if 'engagement_level' in update_data:
         social_record.engagement_level = update_data['engagement_level']
     if 'confidence_level' in update_data:
         social_record.confidence_level = update_data['confidence_level']
+    if 'analyst_notes' in update_data:
+        social_record.analyst_notes = update_data['analyst_notes']
     
     social_record.updated_at = datetime.now(timezone.utc)
     
