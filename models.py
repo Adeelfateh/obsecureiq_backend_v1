@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base, relationship, backref
 from sqlalchemy.sql import func
 from datetime import datetime
 import uuid
@@ -64,7 +64,7 @@ class ClientEmail(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
-    client = relationship("Client", backref="emails")
+    client = relationship("Client", backref=backref("emails", cascade="all, delete-orphan"))
 
 class ClientPhoneNumber(Base):
     __tablename__ = "client_phone_numbers"
@@ -76,7 +76,7 @@ class ClientPhoneNumber(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
-    client = relationship("Client", backref="phone_numbers")
+    client = relationship("Client", backref=backref("phone_numbers", cascade="all, delete-orphan"))
 
 class ClientUsername(Base):
     __tablename__ = "client_username"
